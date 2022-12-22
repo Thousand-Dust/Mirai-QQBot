@@ -1,2 +1,8 @@
 # Project exclude paths
-/target/
+.idea
+cache
+out
+target
+.gitignore
+device.json
+token.txt

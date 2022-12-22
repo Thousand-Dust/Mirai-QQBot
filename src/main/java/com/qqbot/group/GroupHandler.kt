@@ -166,6 +166,8 @@ class GroupHandler(my: Member, private val chatGPTManager: ChatGPTManager) : Bas
                     "解禁：${ManagerCommand.解禁}/${ManagerCommand.kj}+@目标\n" +
                     "撤回：" + ManagerCommand.撤回 + "+@目标+撤回数量(默认10)\n" +
                     "撤回关键词：" + ManagerCommand.撤回关键词 + "+(空格)+关键词\n" +
+                    "封印：" + ManagerCommand.封印 + "+@目标+封印层数\n" +
+                    "解除封印：" + ManagerCommand.解除封印 + "+@目标\n" +
                     "查询消息记录：" + ManagerCommand.查询消息记录 + "@目标+查询数量(默认5)\n" +
                     "全员禁言：" + ManagerCommand.开启全员禁言 + "\n" +
                     "关闭全员禁言：" + ManagerCommand.关闭全员禁言 + "\n" +
