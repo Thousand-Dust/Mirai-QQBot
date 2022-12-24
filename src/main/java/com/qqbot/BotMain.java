@@ -14,29 +14,23 @@ import net.mamoe.mirai.utils.BotConfiguration;
 public class BotMain {
 
     public static void main(String[] args) {
-        Bot bot = BotFactory.INSTANCE.newBot(551753263, "zwb9446426", new BotConfiguration() {{
+        Bot bot = BotFactory.INSTANCE.newBot(
+                551753263, "zwb9446426",
+//                1280715626, "zwb9446426",
+                new BotConfiguration() {{
             fileBasedDeviceInfo();
             setProtocol(MiraiProtocol.ANDROID_PAD);
         }});
         bot.login();
-        /*Bot bot = BotFactory.INSTANCE.newBot(1280715626, "zwb9446426", new BotConfiguration() {{
-            fileBasedDeviceInfo();
-            setProtocol(MiraiProtocol.ANDROID_PAD);
-        }});
-        bot.login();*/
 
-        ChatGPTManager chatGPTManager = new ChatGPTManager();
+//        ChatGPTManager chatGPTManager = new ChatGPTManager();
         //好友相关事件
-        ContactEventHandOut contactHandOut = new ContactEventHandOut(bot, chatGPTManager);
+        ContactEventHandOut contactHandOut = new ContactEventHandOut(bot);
         contactHandOut.subScribe();
 
         //群事件
-        GroupEventHandOut groupHandOut = new GroupEventHandOut(bot, chatGPTManager);
+        GroupEventHandOut groupHandOut = new GroupEventHandOut(bot);
         groupHandOut.subScribe();
-
-        /*ChatGPTLogic logic = new ChatGPTLogic();
-        logic.refreshSession();
-        System.out.println(logic.getChatResponse("hello"));*/
 
     }
 

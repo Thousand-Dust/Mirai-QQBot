@@ -22,7 +22,7 @@ class ChatGPTLogic {
         private var lastFileTime = 0L
 
         init {
-            val file = File("token.txt")
+            /*val file = File("token.txt")
             val updateInvoke: () -> Unit = {
                 file.absolutePath
                 if (file.exists() && file.lastModified() != lastFileTime) {
@@ -37,7 +37,7 @@ class ChatGPTLogic {
                     updateInvoke.invoke()
                     Thread.sleep(3000)
                 }
-            }
+            }*/
         }
     }
 

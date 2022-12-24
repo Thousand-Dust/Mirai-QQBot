@@ -24,10 +24,12 @@ import kotlin.random.Random
  * TODO: 将群消息处理的架构修改为：按系统分开解耦，如：群管系统，积分系统，主人系统
  * @author Thousand-Dust
  */
-class GroupHandler(my: Member, private val chatGPTManager: ChatGPTManager) : BaseGroupHandler(my) {
+class GroupHandler(my: Member) : BaseGroupHandler(my) {
 
     private lateinit var myGroup: Group
     private lateinit var database: GroupDatabase
+
+    private val coroutineScope = CoroutineScope(Dispatchers.IO)
 
     //封印列表
     private val sealMap = HashMap<Long, Int>()
@@ -47,24 +49,9 @@ class GroupHandler(my: Member, private val chatGPTManager: ChatGPTManager) : Bas
     override fun acceptMessage(event: GroupMessageEvent) {
         addCache(event)
 
-        runBlocking(Dispatchers.IO) {
-            try {//发言增加积分
-                val member = event.sender
-                var memberData = database.getMember(member.id)
-                if (memberData == null) {
-                    memberData = MemberData(member.id, member.nameCardOrNick, 1)
-                    database.add(memberData)
-                } else {
-                    memberData.name = member.nameCardOrNick
-                    memberData.score += 1
-                    database.setMember(memberData)
-                }
-                if (managerCommand(event)) {
-                    return@runBlocking
-                }
-                if (publicCommand(event)) {
-                    return@runBlocking
-                }
+        coroutineScope.launch {
+            try {
+                //检查封印
                 run {
                     val senderId = event.sender.id
                     val num = sealMap[senderId] ?: return@run
@@ -76,22 +63,40 @@ class GroupHandler(my: Member, private val chatGPTManager: ChatGPTManager) : Bas
                     event.message.recall()
                 }
 
+                //发言增加积分
+                val member = event.sender
+                var memberData = database.getMember(member.id)
+                if (memberData == null) {
+                    memberData = MemberData(member.id, member.nameCardOrNick, 1)
+                    database.add(memberData)
+                } else {
+                    memberData.name = member.nameCardOrNick
+                    memberData.score += 1
+                    database.setMember(memberData)
+                }
+
+                //管理员命令识别
+                if (managerCommand(event)) {
+                    return@launch
+                }
+
+                //检测刷屏
                 if (checkFrequentSending(event)) {
-                    return@runBlocking
+                    return@launch
+                }
+
+                //公开命令识别
+                if (publicCommand(event)) {
+                    return@launch
                 }
 
                 val message = event.message
-
-                if (message.contentToString().contains("<?xml")) {
-                    message.recall()
-                    return@runBlocking
-                }
                 if (message.stream().filter(At::class::isInstance).count() > 15) {
                     message.recall()
                     event.sender.mute(60 * 60 * 24);
                     val at = At(event.sender.id)
                     event.group.sendMessage(at + " 违规行为，艾特人数过多")
-                    return@runBlocking
+                    return@launch
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -145,7 +150,6 @@ class GroupHandler(my: Member, private val chatGPTManager: ChatGPTManager) : Bas
      */
     private suspend fun managerCommand(event: GroupMessageEvent): Boolean {
         val message = event.message
-        message.sourceOrNull
         //命令消息（消息头）
         val commandMessage = message[1]
         //消息发送对象
@@ -162,7 +166,7 @@ class GroupHandler(my: Member, private val chatGPTManager: ChatGPTManager) : Bas
                     "管理员操作：\n" +
                     "踢出群聊：${ManagerCommand.踢}/${ManagerCommand.t}+@目标\n" +
                     "踢出并拉黑：${ManagerCommand.踢黑}/${ManagerCommand.tb}+@目标\n" +
-                    "禁言：${ManagerCommand.禁言}/${ManagerCommand.ban}+@目标+时间和单位(默认10m) 时间单位 (s秒,m分钟,h小时)\n" +
+                    "禁言：${ManagerCommand.禁言}/${ManagerCommand.ban}+@目标+时间和单位(默认10m) 时间单位 (s秒,m分钟,h小时,d天)\n" +
                     "解禁：${ManagerCommand.解禁}/${ManagerCommand.kj}+@目标\n" +
                     "撤回：" + ManagerCommand.撤回 + "+@目标+撤回数量(默认10)\n" +
                     "撤回关键词：" + ManagerCommand.撤回关键词 + "+(空格)+关键词\n" +

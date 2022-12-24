@@ -11,22 +11,13 @@ class GroupDatabase(private val groupId: Long) {
 
     companion object {
         private const val USER_NAME = "qqbot"
-        private const val PASSWORD = "qqbot-tdzn"
+        private const val PASSWORD = "QQBot-tdzn123"
         private const val DATABASE_NAME = "qqbot_5517"
 
         private val connection: Connection
 
         private const val TABLE_VERSION = 1000
 
-        enum class Column {
-            ID,
-            NAME,
-            SCORE,
-            LAST_SIGN_TIME,
-            LAST_VIOLATION_TIME,
-            VIOLATION_COUNT,
-            PERMISSION
-        }
         //群成员id 即qq号
         private const val COLUMN_GROUP_ID = "id"
         //群成员昵称
