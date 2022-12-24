@@ -8,14 +8,14 @@ import net.mamoe.mirai.event.events.*
  * 群消息事件分发处理类
  * @author Thousand-Dust
  */
-class GroupEventHandOut(private val bot: Bot, private val chatGPTManager: ChatGPTManager) {
+class GroupEventHandOut(private val bot: Bot) {
 
     private val groupHandlers = HashMap<Long, GroupEventHandler>()
 
     init {
         val groups = bot.groups
         for (group in groups) {
-            val groupHandler = GroupHandler(group[bot.id]!!, chatGPTManager)
+            val groupHandler = GroupHandler(group[bot.id]!!)
             if (!groupHandler.onCreate(group)) {
                 continue
             }
@@ -37,10 +37,11 @@ class GroupEventHandOut(private val bot: Bot, private val chatGPTManager: ChatGP
             }
             it.subscribeAlways<BotJoinGroupEvent> { event ->
                 val group = event.group
-                val groupHandler = GroupHandler(group[bot.id]!!, chatGPTManager)
+                val groupHandler = GroupHandler(group[bot.id]!!)
                 if (groupHandler.onCreate(group)) {
                     groupHandlers[group.id] = groupHandler
                 }
+
             }
             it.subscribeAlways<BotLeaveEvent> { event ->
                 groupHandlers.remove(event.groupId)

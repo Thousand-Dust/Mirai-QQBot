@@ -13,7 +13,7 @@ import java.util.concurrent.ThreadPoolExecutor.AbortPolicy
 /**
  * 好友相关事件
  */
-class ContactHandler(private val chatGPTManager: ChatGPTManager) : ContactEventHandler {
+class ContactHandler() : ContactEventHandler {
 
     private lateinit var myBot: Bot
 
@@ -41,6 +41,7 @@ class ContactHandler(private val chatGPTManager: ChatGPTManager) : ContactEventH
             if (friend.id == myBot.id) {
                 return@runBlocking
             }
+            friend.sendMessage("小冰暂不支持聊天哦")
             /*val singleMessage = friendMessageEvent.message[1]
             if (singleMessage !is PlainText) {
                 friend.sendMessage("不支持的消息类型")
@@ -56,7 +57,6 @@ class ContactHandler(private val chatGPTManager: ChatGPTManager) : ContactEventH
             } catch (e: Exception) {
                 friend.sendMessage("错误：$e")
             }*/
-            friend.sendMessage("小冰暂不支持聊天哦")
         }
     }
 

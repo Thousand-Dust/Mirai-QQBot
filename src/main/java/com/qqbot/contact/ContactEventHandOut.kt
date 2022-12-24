@@ -6,9 +6,9 @@ import net.mamoe.mirai.event.events.FriendAddEvent
 import net.mamoe.mirai.event.events.FriendMessageEvent
 import net.mamoe.mirai.event.events.NewFriendRequestEvent
 
-class ContactEventHandOut(private val bot: Bot, private val chatGPTManager: ChatGPTManager) {
+class ContactEventHandOut(private val bot: Bot) {
 
-    private val contactHandler = ContactHandler(chatGPTManager)
+    private val contactHandler = ContactHandler()
 
     init {
         contactHandler.onCreate(bot)
