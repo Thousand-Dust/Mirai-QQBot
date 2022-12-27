@@ -673,7 +673,7 @@ class GroupHandler(my: Member) : BaseGroupHandler(my) {
     private fun memberUnmuteAll(group: Group): Boolean {
         coroutineScope.launch {
             group.members.filter { it.isMuted }.let {
-                if (it.size < 1) {
+                if (it.isEmpty()) {
                     group.sendMessage("没有群员被禁言")
                     return@let
                 }
