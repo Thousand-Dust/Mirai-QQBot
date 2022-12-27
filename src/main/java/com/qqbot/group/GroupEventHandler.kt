@@ -39,9 +39,4 @@ interface GroupEventHandler {
      */
     fun onMemberLeave(event: MemberLeaveEvent)
 
-    /**
-     * 群成员被禁言时调用
-     */
-    fun onMemberMute(event: MemberMuteEvent)
-
 }

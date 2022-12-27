@@ -20,8 +20,13 @@ public class BotMain {
                 new BotConfiguration() {{
             fileBasedDeviceInfo();
             setProtocol(MiraiProtocol.ANDROID_PAD);
+
+            //开启群成员列表缓存
+            getContactListCache().setGroupMemberListCacheEnabled(true);
         }});
         bot.login();
+
+
 
 //        ChatGPTManager chatGPTManager = new ChatGPTManager();
         //好友相关事件
