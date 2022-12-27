@@ -1,7 +1,7 @@
 package com.qqbot.group
 
 import com.qqbot.Info
-import com.qqbot.ai.ChatGPTManager
+import com.qqbot.Utils
 import com.qqbot.database.group.GroupDatabase
 import com.qqbot.database.group.MemberData
 import kotlinx.coroutines.*
@@ -33,8 +33,9 @@ class GroupHandler(my: Member) : BaseGroupHandler(my) {
 
     //封印列表
     private val sealMap = HashMap<Long, Int>()
+
     //24小时毫秒数
-    private val day = 24 * 60 * 60 * 1000
+    private val dayMs = 24 * 60 * 60 * 1000
 
     override fun onCreate(group: Group): Boolean {
         this.myGroup = group
@@ -61,6 +62,7 @@ class GroupHandler(my: Member) : BaseGroupHandler(my) {
                     }
                     sealMap[senderId] = num - 1
                     event.message.recall()
+                    return@launch
                 }
 
                 //发言增加积分
@@ -91,11 +93,13 @@ class GroupHandler(my: Member) : BaseGroupHandler(my) {
                 }
 
                 val message = event.message
-                if (message.stream().filter(At::class::isInstance).count() > 15) {
-                    message.recall()
-                    event.sender.mute(60 * 60 * 24);
-                    val at = At(event.sender.id)
-                    event.group.sendMessage(at + " 违规行为，艾特人数过多")
+                //临时代码，用于测试 TODO: 删除
+                if (message.size == 2 && message[1].toString() == "菜单") {
+                    event.subject.sendMessage("主人系统(还没写)\n群主系统(还没写)\n群管系统(群主及管理员可用)\n积分系统(公开可用)")
+                    return@launch
+                }
+
+                if (violationDetection(event)) {
                     return@launch
                 }
             } catch (e: Exception) {
@@ -105,15 +109,41 @@ class GroupHandler(my: Member) : BaseGroupHandler(my) {
     }
 
     override fun onMemberJoin(event: MemberJoinEvent) {
-//        TODO("Not yet implemented")
+        runBlocking {
+            event.group.sendMessage("欢迎新人" + At(event.member.id) + " 加入本群")
+        }
     }
 
     override fun onMemberLeave(event: MemberLeaveEvent) {
-//        TODO("Not yet implemented")
+        runBlocking {
+            if (event is MemberLeaveEvent.Quit) {
+                event.group.sendMessage(At(event.member.id) + " 退出了本群")
+                return@runBlocking
+            }
+            if (event is MemberLeaveEvent.Kick && event.operator != null) {
+                event.group.sendMessage(At(event.member.id) + "被" + At(event.operator!!.id) + " 踢出了群聊")
+                return@runBlocking
+            }
+        }
     }
 
     override fun onMemberMute(event: MemberMuteEvent) {
 //        TODO("Not yet implemented")
+    }
+
+    /**
+     * 其他违规行为检测
+     */
+    private suspend fun violationDetection(event: GroupMessageEvent): Boolean {
+        val message = event.message
+        if (message.stream().filter(At::class::isInstance).count() > 15) {
+            message.recall()
+            event.sender.mute(dayMs / 1000)
+            val at = At(event.sender.id)
+            event.group.sendMessage(at + " 违规行为，艾特人数过多")
+            return true
+        }
+        return false
     }
 
     /**
@@ -122,26 +152,78 @@ class GroupHandler(my: Member) : BaseGroupHandler(my) {
     private suspend fun checkFrequentSending(event: GroupMessageEvent): Boolean {
         if (cacheSize() < 1) return false
 
-        val id = event.sender.id
-        val lastTime = event.message.time
+        val senderId = event.sender.id
+        val message = event.message
+        val lastTime = message.time
 
-        //判断8秒内是否有超过5条消息
-        val tempList = cacheStreamCall { stream ->
+        val checkedMsgRecord = cacheStreamCall { stream ->
             //跳过事件缓存的前面，留下最后 [com.qqbot.Info.CHECK_EVENT_COUNT] 条缓存用于检测
             stream.skip((max(0, cacheSize() - Info.CHECK_EVENT_COUNT)).toLong())
-                .filter {
-                    //匹配同一群员8秒内的消息
-                    it.sender.id == id && lastTime - it.message.time < 8
-                }.collect(Collectors.toList())
+                .filter { it.sender.id == senderId }
+        }.collect(Collectors.toList())
+
+        //获取消息发送者 [Info.CHECK_EVENT_TIME] 秒内的消息记录
+        val messageRecord = checkedMsgRecord.filter {
+            lastTime - it.message.time < Info.CHECK_EVENT_TIME
         }
 
-        if (tempList.count() > 5) {
-            event.sender.mute(60 * 10)
-            event.group.sendMessage("禁止刷屏，关小黑屋十分钟")
+        //判断达到 [Info.CHECK_EVENT_COUNT] 条，判断为刷屏
+        if (messageRecord.count() >= Info.CHECK_EVENT_COUNT_MAX) {
+            violationMute(event.sender, event.group)
+            return true
+        }
+        //获取重复消息
+        val duplicateMessage = checkedMsgRecord.filter {
+            Utils.messageChainEqual(it.message, message)
+        }
+        //重复消息达到 [Info.CHECK_EVENT_COUNT] 条，判断为刷屏
+        if (duplicateMessage.count() >= Info.CHECK_EVENT_COUNT_MAX1) {
+            violationMute(event.sender, event.group)
             return true
         }
 
         return false
+    }
+
+    /**
+     * 违规禁言
+     */
+    private suspend fun violationMute(sender: Member, group: Group) {
+        val senderId = sender.id
+        //修改群员违规信息
+        var memberData = database.getMember(senderId)
+        if (memberData == null) {
+            memberData = MemberData(senderId, sender.nameCardOrNick)
+            database.add(memberData)
+        }
+        //判断48小时内是否有多次违规
+        if (System.currentTimeMillis() - memberData.lastViolationTime < (dayMs * 2)) {
+            memberData.violationCount += 1
+        } else {
+            memberData.violationCount = 1
+        }
+        memberData.lastViolationTime = System.currentTimeMillis()
+        database.setMember(memberData)
+        //计算惩罚时间
+        val muteTime = when (memberData.violationCount) {
+            1 -> Info.CHECK_EVENT_PUNISH_TIME
+            2 -> Info.CHECK_EVENT_PUNISH_TIME * 3
+            3 -> Info.CHECK_EVENT_PUNISH_TIME * 6
+            else -> dayMs / 1000
+        }
+        sender.mute(muteTime)
+
+        //将目标被禁言时间格式化为 时:分:秒
+        val hour = muteTime / 3600
+        val minute = muteTime % 3600 / 60
+        val stringBuilder = StringBuilder()
+        if (hour != 0) {
+            stringBuilder.append(hour).append("小时")
+        }
+        if (minute != 0) {
+            stringBuilder.append(minute).append("分钟")
+        }
+        group.sendMessage("禁止刷屏，关小黑屋$stringBuilder")
     }
 
     /**
@@ -150,8 +232,6 @@ class GroupHandler(my: Member) : BaseGroupHandler(my) {
      */
     private suspend fun managerCommand(event: GroupMessageEvent): Boolean {
         val message = event.message
-        //命令消息（消息头）
-        val commandMessage = message[1]
         //消息发送对象
         val sender = event.sender
         //消息发送者是否为管理员
@@ -159,63 +239,72 @@ class GroupHandler(my: Member) : BaseGroupHandler(my) {
         if (!(isPermission && message[1] is PlainText)) {
             return false
         }
+        //命令消息（消息头）
+        val commandMessage = message[1]
         //识别命令
-        when (commandMessage.toString()) {
-            ManagerCommand.群管系统.name -> {
-                event.group.sendMessage(
-                    "管理员操作：\n" +
-                    "踢出群聊：${ManagerCommand.踢}/${ManagerCommand.t}+@目标\n" +
-                    "踢出并拉黑：${ManagerCommand.踢黑}/${ManagerCommand.tb}+@目标\n" +
-                    "禁言：${ManagerCommand.禁言}/${ManagerCommand.ban}+@目标+时间和单位(默认10m) 时间单位 (s秒,m分钟,h小时,d天)\n" +
-                    "解禁：${ManagerCommand.解禁}/${ManagerCommand.kj}+@目标\n" +
-                    "撤回：" + ManagerCommand.撤回 + "+@目标+撤回数量(默认10)\n" +
-                    "撤回关键词：" + ManagerCommand.撤回关键词 + "+(空格)+关键词\n" +
-                    "封印：" + ManagerCommand.封印 + "+@目标+封印层数\n" +
-                    "解除封印：" + ManagerCommand.解除封印 + "+@目标\n" +
-                    "查询消息记录：" + ManagerCommand.查询消息记录 + "@目标+查询数量(默认5)\n" +
-                    "全员禁言：" + ManagerCommand.开启全员禁言 + "\n" +
-                    "关闭全员禁言：" + ManagerCommand.关闭全员禁言 + "\n" +
-                    "其他功能待更新..."
-                )
-                return true
-            }
-            ManagerCommand.踢.name, ManagerCommand.t.name -> {
-                return kick(message[2], event.group)
-            }
-            ManagerCommand.踢黑.name, ManagerCommand.tb.name -> {
-                return kick(message[2], event.group, true)
-            }
-            ManagerCommand.禁言.name, ManagerCommand.ban.name -> {
-                return mute(message[2], isSingleMessageEmpty(message, 3, PlainText("10m")), event.group)
-            }
-            ManagerCommand.解禁.name, ManagerCommand.kj.name -> {
-                return unmute(message[2], event.group)
-            }
-            ManagerCommand.撤回.name -> {
-                return recall(message[2], isSingleMessageEmpty(message, 3, PlainText("10")), event.group)
-            }
-            ManagerCommand.封印.name -> {
-                return seal(message[2], isSingleMessageEmpty(message, 3, PlainText("5")), event.group)
-            }
-            ManagerCommand.解除封印.name -> {
-                return unseal(message[2], event.group)
-            }
-            ManagerCommand.查询消息记录.name -> {
-                return queryMessage(message[2], isSingleMessageEmpty(message, 3, PlainText("5")), event.group)
-            }
-            ManagerCommand.开启全员禁言.name -> {
-                return muteAll(event.group)
-            }
-            ManagerCommand.关闭全员禁言.name -> {
-                return unmuteAll(event.group)
-            }
-
-            else -> {
-                if (recallKeyword(message, event.group)) {
-                    //撤回关键词
+        if (message.size == 2) {
+            when (commandMessage.toString()) {
+                ManagerCommand.群管系统.name -> {
+                    event.group.sendMessage(
+                        "管理员操作：\n" +
+                                "踢出群聊：${ManagerCommand.踢}/${ManagerCommand.t}+@目标\n" +
+                                "踢出并拉黑：${ManagerCommand.踢黑}/${ManagerCommand.tb}+@目标\n" +
+                                "禁言：${ManagerCommand.禁言}/${ManagerCommand.ban}+@目标+时间和单位(默认10m) 时间单位 (s秒,m分钟,h小时,d天)\n" +
+                                "解禁：${ManagerCommand.解禁}/${ManagerCommand.kj}+@目标\n" +
+                                "撤回：" + ManagerCommand.撤回 + "+@目标+撤回数量(默认10)\n" +
+                                "撤回关键词：" + ManagerCommand.撤回关键词 + "+(空格)+关键词\n" +
+                                "封印：" + ManagerCommand.封印 + "+@目标+封印层数\n" +
+                                "解除封印：" + ManagerCommand.解除封印 + "+@目标\n" +
+                                "查询消息记录：" + ManagerCommand.查询消息记录 + "@目标+查询数量(默认5)\n" +
+                                "全员禁言：" + ManagerCommand.开启全员禁言 + "\n" +
+                                "关闭全员禁言：" + ManagerCommand.关闭全员禁言 + "\n" +
+                                "其他功能待更新..."
+                    )
                     return true
                 }
+                ManagerCommand.开启全员禁言.name -> {
+                    return muteAll(event.group)
+                }
+                ManagerCommand.关闭全员禁言.name -> {
+                    return unmuteAll(event.group)
+                }
+                else -> {
+                    if (commandMessage.toString().split(" ").size == 2 && recallKeyword(message, event.group)) {
+                        //撤回关键词
+                        return true
+                    }
+                }
             }
+            return false
+        }
+        if (message.size >= 3) {
+            when (commandMessage.toString()) {
+                ManagerCommand.踢.name, ManagerCommand.t.name -> {
+                    return kick(message[2], event.group)
+                }
+                ManagerCommand.踢黑.name, ManagerCommand.tb.name -> {
+                    return kick(message[2], event.group, true)
+                }
+                ManagerCommand.禁言.name, ManagerCommand.ban.name -> {
+                    return mute(message[2], isSingleMessageEmpty(message, 3, PlainText("10m")), event.group)
+                }
+                ManagerCommand.解禁.name, ManagerCommand.kj.name -> {
+                    return unmute(message[2], event.group)
+                }
+                ManagerCommand.撤回.name -> {
+                    return recall(message[2], isSingleMessageEmpty(message, 3, PlainText("10")), event.group)
+                }
+                ManagerCommand.封印.name -> {
+                    return seal(message[2], isSingleMessageEmpty(message, 3, PlainText("5")), event.group)
+                }
+                ManagerCommand.解除封印.name -> {
+                    return unseal(message[2], event.group)
+                }
+                ManagerCommand.查询消息记录.name -> {
+                    return queryMessage(message[2], isSingleMessageEmpty(message, 3, PlainText("5")), event.group)
+                }
+            }
+            return false
         }
         return false
     }
@@ -231,82 +320,58 @@ class GroupHandler(my: Member) : BaseGroupHandler(my) {
             val group = event.group
             val sender = event.sender
             //识别命令
-            when (commandMessage.toString()) {
-                MemberCommand.积分系统.name -> {
-                    event.group.sendMessage(
-                        "积分系统：\n" +
-                                "每条发言增加1积分，禁言每分钟消耗20积分，解除禁言每分钟消耗10积分\n" +
-                                "签到：" + MemberCommand.签到 + "\n" +
-                                "转账：" + MemberCommand.转账 + "@目标+积分数量\n" +
-                                "查询积分：" + MemberCommand.我的积分 + "\n" +
-                                "积分排行榜：" + MemberCommand.积分排行榜 + "\n" +
-                                "禁言：" + MemberCommand.kban + "@目标+时间和单位 (s秒,m分钟,h小时)\n" +
-                                "解禁：" + MemberCommand.kj + "@目标\n" +
-                                "其他功能待更新..."
-                    )
-                    return true
-                }
-                MemberCommand.签到.name -> {
-                    return sign(sender, group)
-                }
-                MemberCommand.转账.name -> {
-                    return transfer(message[2], message[3], sender, group)
-                }
-                MemberCommand.我的积分.name -> {
-                    val memberData = database.getMember(sender.id)
-                    if (memberData == null) {
-                        event.group.sendMessage(At(sender.id) + " 你的积分为：0")
-                    } else {
-                        event.group.sendMessage(At(sender.id) + " 你的积分为：${memberData.score}")
+            if (message.size == 2) {
+                when (commandMessage.toString()) {
+                    MemberCommand.积分系统.name -> {
+                        event.group.sendMessage(
+                            "积分系统：\n" +
+                                    "每条发言增加1积分，禁言每分钟消耗20积分，解除禁言每分钟消耗10积分\n" +
+                                    "签到：" + MemberCommand.签到 + "\n" +
+                                    "转账：" + MemberCommand.转账 + "@目标+积分数量\n" +
+                                    "查询积分：" + MemberCommand.我的积分 + "\n" +
+                                    "积分排行榜：" + MemberCommand.积分排行榜 + "\n" +
+                                    "禁言：" + MemberCommand.kban + "@目标+时间和单位 (s秒,m分钟,h小时)\n" +
+                                    "解禁：" + MemberCommand.kj + "@目标\n" +
+                                    "其他功能待更新..."
+                        )
+                        return true
                     }
-                    return true
-                }
-                MemberCommand.积分排行榜.name -> {
-                    val memberDataList = database.getTopTen()
-                    if (memberDataList.isEmpty()) {
-                        event.group.sendMessage("暂无积分数据")
-                    } else {
-                        val stringBuilder = StringBuilder("积分排行榜：\n")
-                        //找出重复的名字
-                        val repeatNameList = ArrayList<String>(10)
-                        for (i in memberDataList.indices) {
-                            for (j in i + 1 until memberDataList.size) {
-                                if (memberDataList[i].name == memberDataList[j].name) {
-                                    repeatNameList.add(memberDataList[i].name)
-                                }
-                            }
-                        }
-
-                        memberDataList.forEachIndexed { index, memberData ->
-                            stringBuilder.append(index + 1)
-                            stringBuilder.append("、")
-                            stringBuilder.append(memberData.name)
-                            if (repeatNameList.contains(memberData.name)) {
-                                stringBuilder.append("(")
-                                stringBuilder.append(memberData.id)
-                                stringBuilder.append(")")
-                            }
-                            stringBuilder.append("：")
-                            stringBuilder.append(memberData.score)
-                            stringBuilder.append("\n")
-                        }
-                        event.group.sendMessage(stringBuilder.toString())
+                    MemberCommand.签到.name -> {
+                        return sign(sender, group)
                     }
-                    return true
+                    MemberCommand.我的积分.name -> {
+                        val memberData = database.getMember(sender.id)
+                        if (memberData == null) {
+                            event.group.sendMessage(At(sender.id) + " 你的积分为：0")
+                        } else {
+                            event.group.sendMessage(At(sender.id) + " 你的积分为：${memberData.score}")
+                        }
+                        return true
+                    }
+                    MemberCommand.积分排行榜.name -> {
+                        return scoreRanking(group)
+                    }
                 }
-                MemberCommand.kban.name -> {
-                    return scoreMute(message[2], message[3], sender, event.group)
-                }
-                MemberCommand.kj.name -> {
-                    return scoreUnmute(message[2], sender, event.group)
-                }
-                else -> {
-                    return false
-                }
+                return false
             }
+            if (message.size >= 3) {
+                when (commandMessage.toString()) {
+                    MemberCommand.转账.name -> {
+                        return transfer(message[2], message[3], sender, group)
+                    }
+                    MemberCommand.kban.name -> {
+                        return scoreMute(message[2], message[3], sender, event.group)
+                    }
+                    MemberCommand.kj.name -> {
+                        return scoreUnmute(message[2], sender, event.group)
+                    }
+                }
+                return false
+            }
+            return false
         }
 
-        if (commandMessage is At) {
+        if (message.size == 3 && commandMessage is At) {
             if (commandMessage.target == my.id) {
                 val group = event.group
                 /*val singleMessage = message[2]
@@ -327,6 +392,7 @@ class GroupHandler(my: Member) : BaseGroupHandler(my) {
                 group.sendMessage("小冰暂不支持聊天哦")
                 return true
             }
+            return false
         }
         return false
     }
@@ -409,8 +475,6 @@ class GroupHandler(my: Member) : BaseGroupHandler(my) {
 
     /**
      * 根据关键词撤回群员消息
-     * @param targetMessage 目标群成员 [SingleMessage] (@群成员)
-     * @param countMessage 撤回消息数量 [SingleMessage] (PlainText)
      */
     private suspend fun recallKeyword(message: MessageChain, group: Group): Boolean {
         if (cacheSize() < 1) return false
@@ -438,6 +502,7 @@ class GroupHandler(my: Member) : BaseGroupHandler(my) {
                 }
             }
         }
+        group.sendMessage("已撤回包含关键词 \"$keyword\" 的消息")
         return true
     }
 
@@ -617,7 +682,7 @@ class GroupHandler(my: Member) : BaseGroupHandler(my) {
                 group.sendMessage(At(sender.id) + "今天已经签到过了！")
             } else {
                 //判断上次的0点+24小时等于今天的0点
-                if (lastZero + day == todayZero) {
+                if (lastZero + dayMs == todayZero) {
                     //连续签到
                     memberData.continueSignCount += 1
                 } else {
@@ -641,7 +706,12 @@ class GroupHandler(my: Member) : BaseGroupHandler(my) {
     /**
      * 积分转账
      */
-    private suspend fun transfer(targetMessage: SingleMessage, scoreMessage: SingleMessage, sender: Member, group: Group): Boolean {
+    private suspend fun transfer(
+        targetMessage: SingleMessage,
+        scoreMessage: SingleMessage,
+        sender: Member,
+        group: Group
+    ): Boolean {
         val targetId = if (targetMessage is At) targetMessage.target else return false
         //被转账对象
         val member = group[targetId]
@@ -687,11 +757,54 @@ class GroupHandler(my: Member) : BaseGroupHandler(my) {
     }
 
     /**
+     * 积分排行榜
+     */
+    private suspend fun scoreRanking(group: Group): Boolean {
+        val memberDataList = database.getTopTen()
+        if (memberDataList.isEmpty()) {
+            group.sendMessage("暂无积分数据")
+        } else {
+            val stringBuilder = StringBuilder("积分排行榜：\n")
+            //找出重复的名字
+            val repeatNameList = ArrayList<String>(10)
+            for (i in memberDataList.indices) {
+                for (j in i + 1 until memberDataList.size) {
+                    if (memberDataList[i].name == memberDataList[j].name) {
+                        repeatNameList.add(memberDataList[i].name)
+                    }
+                }
+            }
+
+            memberDataList.forEachIndexed { index, memberData ->
+                stringBuilder.append(index + 1)
+                    .append("、")
+                    .append(memberData.name)
+                //如果名字重复，加上QQ号
+                if (repeatNameList.contains(memberData.name)) {
+                    stringBuilder.append("(")
+                        .append(memberData.id)
+                        .append(")")
+                }
+                stringBuilder.append("：")
+                    .append(memberData.score)
+                    .append("\n")
+            }
+            group.sendMessage(stringBuilder.toString())
+        }
+        return true
+    }
+
+    /**
      * 积分禁言
      * @param targetMessage 目标群成员 [SingleMessage] (@群成员)
      * @param timeMessage 禁言时间 [SingleMessage]
      */
-    private suspend fun scoreMute(targetMessage: SingleMessage, timeMessage: SingleMessage, sender: Member, group: Group): Boolean {
+    private suspend fun scoreMute(
+        targetMessage: SingleMessage,
+        timeMessage: SingleMessage,
+        sender: Member,
+        group: Group
+    ): Boolean {
         val targetId = if (targetMessage is At) targetMessage.target else return false
         val targetMember = group[targetId]
         if (targetMember == null) {
