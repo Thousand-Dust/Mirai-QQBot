@@ -52,6 +52,7 @@ class GroupHandler(my: Member) : BaseGroupHandler(my) {
 
         coroutineScope.launch {
             try {
+                val message = event.message
                 //检查封印
                 run {
                     val senderId = event.sender.id
@@ -63,18 +64,6 @@ class GroupHandler(my: Member) : BaseGroupHandler(my) {
                     sealMap[senderId] = num - 1
                     event.message.recall()
                     return@launch
-                }
-
-                //发言增加积分
-                val member = event.sender
-                var memberData = database.getMember(member.id)
-                if (memberData == null) {
-                    memberData = MemberData(member.id, member.nameCardOrNick, 1)
-                    database.add(memberData)
-                } else {
-                    memberData.name = member.nameCardOrNick
-                    memberData.score += 1
-                    database.setMember(memberData)
                 }
 
                 //管理员命令识别
@@ -92,7 +81,6 @@ class GroupHandler(my: Member) : BaseGroupHandler(my) {
                     return@launch
                 }
 
-                val message = event.message
                 //临时代码，用于测试 TODO: 删除
                 if (message.size == 2 && message[1].toString() == "菜单") {
                     event.subject.sendMessage("主人系统(还没写)\n群主系统(还没写)\n群管系统(群主及管理员可用)\n积分系统(公开可用)")
@@ -102,6 +90,18 @@ class GroupHandler(my: Member) : BaseGroupHandler(my) {
                 if (violationDetection(event)) {
                     return@launch
                 }
+
+                //发言增加积分
+                val member = event.sender
+                var memberData = database.getMember(member.id)
+                if (memberData == null) {
+                    memberData = MemberData(member.id, member.nameCardOrNick, 2)
+                    database.add(memberData)
+                } else {
+                    memberData.name = member.nameCardOrNick
+                    memberData.score += 2
+                    database.setMember(memberData)
+                }
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -110,7 +110,7 @@ class GroupHandler(my: Member) : BaseGroupHandler(my) {
 
     override fun onMemberJoin(event: MemberJoinEvent) {
         runBlocking {
-            event.group.sendMessage("欢迎新人" + At(event.member.id) + " 加入本群")
+            event.group.sendMessage(MessageChainBuilder().append("欢迎新人").append(At(event.member.id)).append(" 加入本群").build())
         }
     }
 
@@ -125,10 +125,6 @@ class GroupHandler(my: Member) : BaseGroupHandler(my) {
                 return@runBlocking
             }
         }
-    }
-
-    override fun onMemberMute(event: MemberMuteEvent) {
-//        TODO("Not yet implemented")
     }
 
     /**
@@ -156,6 +152,26 @@ class GroupHandler(my: Member) : BaseGroupHandler(my) {
         val message = event.message
         val lastTime = message.time
 
+        //一分钟内连续发送了 [Info.CHECK_EVENT_COUNT_MAX] 条消息
+        if (cacheSize() >= Info.CHECK_EVENT_COUNT_MAX) {
+            //连续发送的消息数
+            var count = 0
+            //倒序遍历最后 [Info.CHECK_EVENT_COUNT_MAX] 条消息
+            for (i in cacheSize()-1 downTo cacheSize()-Info.CHECK_EVENT_COUNT_MAX) {
+                val cache = getCache(i)
+                //同一个人一分钟内发送的消息
+                if (cache.sender.id == senderId && lastTime - message.time < 60) {
+                    count++
+                } else {
+                    break
+                }
+            }
+            if (count >= Info.CHECK_EVENT_COUNT_MAX) {
+                violationMute(event.sender, event.group)
+                return true
+            }
+        }
+
         val checkedMsgRecord = cacheStreamCall { stream ->
             //跳过事件缓存的前面，留下最后 [com.qqbot.Info.CHECK_EVENT_COUNT] 条缓存用于检测
             stream.skip((max(0, cacheSize() - Info.CHECK_EVENT_COUNT)).toLong())
@@ -172,14 +188,14 @@ class GroupHandler(my: Member) : BaseGroupHandler(my) {
             violationMute(event.sender, event.group)
             return true
         }
-        //获取重复消息
-        val duplicateMessage = checkedMsgRecord.filter {
-            Utils.messageChainEqual(it.message, message)
-        }
-        //重复消息达到 [Info.CHECK_EVENT_COUNT] 条，判断为刷屏
-        if (duplicateMessage.count() >= Info.CHECK_EVENT_COUNT_MAX1) {
+        //checkedMsgRecord列表最后 [Info.CHECK_EVENT_COUNT_MAX1] 条记录为重复内容，判断为刷屏
+        if (checkedMsgRecord.count() >= Info.CHECK_EVENT_COUNT_MAX1) {
+            for (i in checkedMsgRecord.count()-1 downTo checkedMsgRecord.count() - Info.CHECK_EVENT_COUNT_MAX1) {
+                if (!Utils.messageChainEqual(message, checkedMsgRecord[i].message)) {
+                    return false
+                }
+            }
             violationMute(event.sender, event.group)
-            return true
         }
 
         return false
@@ -249,7 +265,7 @@ class GroupHandler(my: Member) : BaseGroupHandler(my) {
                         "管理员操作：\n" +
                                 "踢出群聊：${ManagerCommand.踢}/${ManagerCommand.t}+@目标\n" +
                                 "踢出并拉黑：${ManagerCommand.踢黑}/${ManagerCommand.tb}+@目标\n" +
-                                "禁言：${ManagerCommand.禁言}/${ManagerCommand.ban}+@目标+时间和单位(默认10m) 时间单位 (s秒,m分钟,h小时,d天)\n" +
+                                "禁言：${ManagerCommand.禁言}/${ManagerCommand.ban}+@目标+时间和单位(默认10m) (s秒,m分钟,h小时,d天)\n" +
                                 "解禁：${ManagerCommand.解禁}/${ManagerCommand.kj}+@目标\n" +
                                 "撤回：" + ManagerCommand.撤回 + "+@目标+撤回数量(默认10)\n" +
                                 "撤回关键词：" + ManagerCommand.撤回关键词 + "+(空格)+关键词\n" +
@@ -258,6 +274,7 @@ class GroupHandler(my: Member) : BaseGroupHandler(my) {
                                 "查询消息记录：" + ManagerCommand.查询消息记录 + "@目标+查询数量(默认5)\n" +
                                 "全员禁言：" + ManagerCommand.开启全员禁言 + "\n" +
                                 "关闭全员禁言：" + ManagerCommand.关闭全员禁言 + "\n" +
+                                "解除所有群员的禁言：" + ManagerCommand.全部解禁 + "\n" +
                                 "其他功能待更新..."
                     )
                     return true
@@ -267,6 +284,9 @@ class GroupHandler(my: Member) : BaseGroupHandler(my) {
                 }
                 ManagerCommand.关闭全员禁言.name -> {
                     return unmuteAll(event.group)
+                }
+                ManagerCommand.全部解禁.name -> {
+                    return memberUnmuteAll(event.group)
                 }
                 else -> {
                     if (commandMessage.toString().split(" ").size == 2 && recallKeyword(message, event.group)) {
@@ -325,7 +345,7 @@ class GroupHandler(my: Member) : BaseGroupHandler(my) {
                     MemberCommand.积分系统.name -> {
                         event.group.sendMessage(
                             "积分系统：\n" +
-                                    "每条发言增加1积分，禁言每分钟消耗20积分，解除禁言每分钟消耗10积分\n" +
+                                    "每条发言增加2积分，禁言每分钟消耗20积分，解除禁言每分钟消耗10积分\n" +
                                     "签到：" + MemberCommand.签到 + "\n" +
                                     "转账：" + MemberCommand.转账 + "@目标+积分数量\n" +
                                     "查询积分：" + MemberCommand.我的积分 + "\n" +
@@ -608,10 +628,6 @@ class GroupHandler(my: Member) : BaseGroupHandler(my) {
         //识别时间单位
         when (unit) {
             's', '秒' -> {
-                if (time < 30) {
-                    group.sendMessage("你太快了，最少要30秒哦！")
-                    return true
-                }
                 member.mute(time)
             }
             'm', '分' -> {
@@ -648,6 +664,25 @@ class GroupHandler(my: Member) : BaseGroupHandler(my) {
     private suspend fun unmuteAll(group: Group): Boolean {
         group.settings.isMuteAll = false
         group.sendMessage("全员禁言关闭")
+        return true
+    }
+
+    /**
+     * 解除所有群员的禁言
+     */
+    private fun memberUnmuteAll(group: Group): Boolean {
+        coroutineScope.launch {
+            group.members.filter { it.isMuted }.let {
+                if (it.size < 1) {
+                    group.sendMessage("没有群员被禁言")
+                    return@let
+                }
+                it.forEach { member ->
+                    member.unmute()
+                }
+                group.sendMessage("已解除所有群员的禁言")
+            }
+        }
         return true
     }
 
@@ -690,8 +725,8 @@ class GroupHandler(my: Member) : BaseGroupHandler(my) {
                     memberData.continueSignCount = 1
                 }
                 //连续签到奖励
-                val fromScore = min(5 + memberData.continueSignCount * 5, 30)
-                val untilScore = min(30 + memberData.continueSignCount * 7, 80)
+                val fromScore = min(7 + memberData.continueSignCount * 3, 36)
+                val untilScore = min(26 + memberData.continueSignCount * 6, 81)
                 //生成随机数为签到的积分
                 val randomScore = Random.nextInt(fromScore, untilScore)
                 memberData.score += randomScore
@@ -852,8 +887,8 @@ class GroupHandler(my: Member) : BaseGroupHandler(my) {
             group.sendMessage("你太快了，最少要30秒哦！")
             return true
         }
-        if (seconds > 3600) {
-            group.sendMessage("最多只能禁言一小时哦！")
+        if (seconds > 60 * 60 * 2) {
+            group.sendMessage("最多只能禁言2小时哦！")
             return true
         }
 
