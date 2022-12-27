@@ -1,5 +1,7 @@
 package com.qqbot;
 
+import net.mamoe.mirai.message.data.MessageChain;
+
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.File;
@@ -105,6 +107,22 @@ public class Utils {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    /**
+     * 对比两个MessageChain的消息内容是否相同
+     * @return 相同返回true，不同返回false
+     */
+    public static boolean messageChainEqual(MessageChain messageChain1, MessageChain messageChain2) {
+        if (messageChain1.size() != messageChain2.size()) {
+            return false;
+        }
+        for (int i = 1; i < messageChain1.size(); i++) {
+            if (!messageChain1.get(i).toString().equals(messageChain2.get(i).toString())) {
+                return false;
+            }
+        }
+        return true;
     }
 
 }
