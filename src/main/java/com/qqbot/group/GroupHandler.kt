@@ -76,6 +76,20 @@ class GroupHandler(my: Member) : BaseGroupHandler(my) {
                     return@launch
                 }
 
+                //发言增加积分
+                val member = event.sender
+                var memberData = database.getMember(member.id)
+                //增加的积分，随机1~2
+                val addScore = 1 + (System.currentTimeMillis() % 2).toInt()
+                if (memberData == null) {
+                    memberData = MemberData(member.id, member.nameCardOrNick, addScore)
+                    database.add(memberData)
+                } else {
+                    memberData.name = member.nameCardOrNick
+                    memberData.score += addScore
+                    database.setMember(memberData)
+                }
+
                 //公开命令识别
                 if (publicCommand(event)) {
                     return@launch
@@ -90,18 +104,6 @@ class GroupHandler(my: Member) : BaseGroupHandler(my) {
                 if (violationDetection(event)) {
                     return@launch
                 }
-
-                //发言增加积分
-                val member = event.sender
-                var memberData = database.getMember(member.id)
-                if (memberData == null) {
-                    memberData = MemberData(member.id, member.nameCardOrNick, 2)
-                    database.add(memberData)
-                } else {
-                    memberData.name = member.nameCardOrNick
-                    memberData.score += 2
-                    database.setMember(memberData)
-                }
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -110,7 +112,9 @@ class GroupHandler(my: Member) : BaseGroupHandler(my) {
 
     override fun onMemberJoin(event: MemberJoinEvent) {
         runBlocking {
-            event.group.sendMessage(MessageChainBuilder().append("欢迎新人").append(At(event.member.id)).append(" 加入本群").build())
+            event.group.sendMessage(
+                MessageChainBuilder().append("欢迎新人").append(At(event.member.id)).append(" 加入本群").build()
+            )
         }
     }
 
@@ -131,6 +135,7 @@ class GroupHandler(my: Member) : BaseGroupHandler(my) {
      * 其他违规行为检测
      */
     private suspend fun violationDetection(event: GroupMessageEvent): Boolean {
+        if (event.sender.isOperator() || !my.isOperator()) return false
         val message = event.message
         if (message.stream().filter(At::class::isInstance).count() > 15) {
             message.recall()
@@ -146,27 +151,28 @@ class GroupHandler(my: Member) : BaseGroupHandler(my) {
      * 检测刷屏
      */
     private suspend fun checkFrequentSending(event: GroupMessageEvent): Boolean {
-        if (cacheSize() < 1) return false
+        if (cacheSize() < 1 || event.sender.isOperator() || !my.isOperator()) return false
 
         val senderId = event.sender.id
         val message = event.message
         val lastTime = message.time
 
-        //一分钟内连续发送了 [Info.CHECK_EVENT_COUNT_MAX] 条消息
+        //30秒内连续发送的消息
         if (cacheSize() >= Info.CHECK_EVENT_COUNT_MAX) {
             //连续发送的消息数
             var count = 0
             //倒序遍历最后 [Info.CHECK_EVENT_COUNT_MAX] 条消息
-            for (i in cacheSize()-1 downTo cacheSize()-Info.CHECK_EVENT_COUNT_MAX) {
+            for (i in cacheSize() - 1 downTo cacheSize() - Info.CHECK_EVENT_COUNT_MAX) {
                 val cache = getCache(i)
                 //同一个人一分钟内发送的消息
-                if (cache.sender.id == senderId && lastTime - message.time < 60) {
+                if (cache.sender.id == senderId && lastTime - message.time < 30) {
                     count++
                 } else {
                     break
                 }
             }
-            if (count >= Info.CHECK_EVENT_COUNT_MAX) {
+            //消息数大于 [Info.CHECK_EVENT_COUNT_MAX] 条消息
+            if (count > Info.CHECK_EVENT_COUNT_MAX) {
                 violationMute(event.sender, event.group)
                 return true
             }
@@ -182,7 +188,6 @@ class GroupHandler(my: Member) : BaseGroupHandler(my) {
         val messageRecord = checkedMsgRecord.filter {
             lastTime - it.message.time < Info.CHECK_EVENT_TIME
         }
-
         //判断达到 [Info.CHECK_EVENT_COUNT] 条，判断为刷屏
         if (messageRecord.count() >= Info.CHECK_EVENT_COUNT_MAX) {
             violationMute(event.sender, event.group)
@@ -190,7 +195,7 @@ class GroupHandler(my: Member) : BaseGroupHandler(my) {
         }
         //checkedMsgRecord列表最后 [Info.CHECK_EVENT_COUNT_MAX1] 条记录为重复内容，判断为刷屏
         if (checkedMsgRecord.count() >= Info.CHECK_EVENT_COUNT_MAX1) {
-            for (i in checkedMsgRecord.count()-1 downTo checkedMsgRecord.count() - Info.CHECK_EVENT_COUNT_MAX1) {
+            for (i in checkedMsgRecord.count() - 1 downTo checkedMsgRecord.count() - Info.CHECK_EVENT_COUNT_MAX1) {
                 if (!Utils.messageChainEqual(message, checkedMsgRecord[i].message)) {
                     return false
                 }
@@ -345,7 +350,7 @@ class GroupHandler(my: Member) : BaseGroupHandler(my) {
                     MemberCommand.积分系统.name -> {
                         event.group.sendMessage(
                             "积分系统：\n" +
-                                    "每条发言增加2积分，禁言每分钟消耗20积分，解除禁言每分钟消耗10积分\n" +
+                                    "每条发言随机增加1~2积分，禁言每分钟消耗20积分，解除禁言每分钟消耗10积分\n" +
                                     "签到：" + MemberCommand.签到 + "\n" +
                                     "转账：" + MemberCommand.转账 + "@目标+积分数量\n" +
                                     "查询积分：" + MemberCommand.我的积分 + "\n" +
@@ -414,6 +419,23 @@ class GroupHandler(my: Member) : BaseGroupHandler(my) {
             }
             return false
         }
+        return false
+    }
+
+    /**
+     * 机器人权限检查
+     * @param group 群
+     * @param target 被操作对象 如果不为空，则检查机器人是否有对其操作的权限
+     * @param sender 操作者 如果不为空，那么 [target] 不能为空，检查机器人和 [sender]是否有对 [target] 操作的权限
+     * @return 机器人是否有权限可以执行操作
+     */
+    private suspend fun checkPermission(group: Group, target: Member? = null, sender: Member? = null): Boolean {
+        if (group.botPermission.isOperator()) {
+            return true
+        }
+        if (target != null && sender != null) {
+        }
+        group.sendMessage("机器人权限不足")
         return false
     }
 
@@ -693,47 +715,44 @@ class GroupHandler(my: Member) : BaseGroupHandler(my) {
         //生成随机数位签到的积分
         val now = System.currentTimeMillis()
         val memberData = database.getMember(sender.id)
-        if (memberData == null) {
-            val randomScore = Random.nextInt(10, 50)
+
+        //成员首次签到
+        if (memberData == null || memberData.lastSignTime == 0L) {
             database.add(
-                MemberData(
-                    sender.id,
-                    sender.nameCardOrNick,
-                    randomScore,
-                    now, 0, 0, 0
-                )
+                MemberData(sender.id, sender.nameCardOrNick, 50, now, 1, 0, 0)
             )
-            group.sendMessage("签到成功，获得${randomScore}积分！")
+            group.sendMessage("签到成功，首次签到获得50积分！")
+            return true
+        }
+
+        val calendar: Calendar = Calendar.getInstance()
+        //计算出今天的0点
+        calendar.timeInMillis = now
+        val todayZero = getDayTime(calendar)
+        //计算出上次签到的0点
+        calendar.timeInMillis = memberData.lastSignTime
+        val lastZero = getDayTime(calendar)
+        //判断是否是同一天
+        if (lastZero == todayZero) {
+            group.sendMessage(At(sender.id) + "今天已经签到过了！")
         } else {
-            val calendar: Calendar = Calendar.getInstance()
-            //计算出今天的0点
-            calendar.timeInMillis = now
-            val todayZero = getDayTime(calendar)
-            //计算出上次签到的0点
-            calendar.timeInMillis = memberData.lastSignTime
-            val lastZero = getDayTime(calendar)
-            //判断是否是同一天
-            if (lastZero == todayZero) {
-                group.sendMessage(At(sender.id) + "今天已经签到过了！")
+            //判断上次的0点+24小时等于今天的0点
+            if (lastZero + dayMs == todayZero) {
+                //连续签到
+                memberData.continueSignCount += 1
             } else {
-                //判断上次的0点+24小时等于今天的0点
-                if (lastZero + dayMs == todayZero) {
-                    //连续签到
-                    memberData.continueSignCount += 1
-                } else {
-                    //非连续签到
-                    memberData.continueSignCount = 1
-                }
-                //连续签到奖励
-                val fromScore = min(7 + memberData.continueSignCount * 3, 36)
-                val untilScore = min(26 + memberData.continueSignCount * 6, 81)
-                //生成随机数为签到的积分
-                val randomScore = Random.nextInt(fromScore, untilScore)
-                memberData.score += randomScore
-                memberData.lastSignTime = now
-                database.setMember(memberData)
-                group.sendMessage(At(sender.id) + "签到成功，已连续签到${memberData.continueSignCount}天，获得${randomScore}积分！")
+                //非连续签到
+                memberData.continueSignCount = 1
             }
+            //连续签到奖励
+            val fromScore = min(7 + memberData.continueSignCount * 3, 38)
+            val untilScore = min(36 + memberData.continueSignCount * 6, 88)
+            //生成随机数为签到的积分
+            val randomScore = Random.nextInt(fromScore, untilScore)
+            memberData.score += randomScore
+            memberData.lastSignTime = now
+            database.setMember(memberData)
+            group.sendMessage(At(sender.id) + "签到成功，已连续签到${memberData.continueSignCount}天，获得${randomScore}积分！")
         }
         return true
     }
