@@ -59,15 +59,16 @@ class GroupDatabase(private val groupId: Long) {
     init {
         //数据表不存在则创建
         val sql = "CREATE TABLE IF NOT EXISTS $TABLE_NAME (" +
-                "$COLUMN_GROUP_ID BIGINT NOT NULL, " +
-                "$COLUMN_GROUP_NAME varchar(32) NOT NULL, " +
-                "$COLUMN_SCORE INT NOT NULL, " +
-                "$COLUMN_LAST_SIGN_TIME BIGINT NOT NULL, " +
-                "$COLUMN_CONTINUE_SIGN_COUNT INT NOT NULL, " +
-                "$COLUMN_LAST_VIOLATION_TIME BIGINT NOT NULL, " +
-                "$COLUMN_VIOLATION_COUNT INT NOT NULL, " +
-                "$COLUMN_PERMISSION INT NOT NULL" +
-                ");"
+                "$COLUMN_GROUP_ID BIGINT NOT NULL COMMENT 'QQ号', " +
+                "$COLUMN_GROUP_NAME varchar(32) NOT NULL COMMENT '名字', " +
+                "$COLUMN_SCORE INT NOT NULL COMMENT '积分', " +
+                "$COLUMN_LAST_SIGN_TIME BIGINT NOT NULL COMMENT '上一次签到时间', " +
+                "$COLUMN_CONTINUE_SIGN_COUNT INT NOT NULL COMMENT '连续签到时间', " +
+                "$COLUMN_LAST_VIOLATION_TIME BIGINT NOT NULL COMMENT '上一次违规时间', " +
+                "$COLUMN_VIOLATION_COUNT INT NOT NULL COMMENT '连续违规次数', " +
+                "$COLUMN_PERMISSION INT NOT NULL COMMENT '自定义权限', " +
+                "PRIMARY KEY ($COLUMN_GROUP_ID)" +
+                ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;"
         connection.createStatement().execute(sql)
     }
 
@@ -98,8 +99,8 @@ class GroupDatabase(private val groupId: Long) {
     /**
      * 删除群成员信息
      */
-    fun delete(groupMember: MemberData) {
-        val sql = "DELETE FROM $TABLE_NAME WHERE $COLUMN_GROUP_ID = ${groupMember.id};"
+    fun delete(id: Long) {
+        val sql = "DELETE FROM $TABLE_NAME WHERE $COLUMN_GROUP_ID = ${id};"
         connection.createStatement().execute(sql)
     }
 

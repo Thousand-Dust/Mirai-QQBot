@@ -9,7 +9,6 @@ import net.mamoe.mirai.contact.*
 import net.mamoe.mirai.event.events.GroupMessageEvent
 import net.mamoe.mirai.event.events.MemberJoinEvent
 import net.mamoe.mirai.event.events.MemberLeaveEvent
-import net.mamoe.mirai.event.events.MemberMuteEvent
 import net.mamoe.mirai.message.data.*
 import net.mamoe.mirai.message.data.MessageSource.Key.recall
 import java.lang.Integer.max
@@ -165,7 +164,7 @@ class GroupHandler(my: Member) : BaseGroupHandler(my) {
             for (i in cacheSize() - 1 downTo cacheSize() - Info.CHECK_EVENT_COUNT_MAX) {
                 val cache = getCache(i)
                 //同一个人一分钟内发送的消息
-                if (cache.sender.id == senderId && lastTime - message.time < 30) {
+                if (cache.sender.id == senderId && lastTime - message.time <= 30) {
                     count++
                 } else {
                     break
@@ -350,7 +349,7 @@ class GroupHandler(my: Member) : BaseGroupHandler(my) {
                     MemberCommand.积分系统.name -> {
                         event.group.sendMessage(
                             "积分系统：\n" +
-                                    "每条发言随机增加1~2积分，禁言每分钟消耗20积分，解除禁言每分钟消耗10积分\n" +
+                                    "每条发言随机获得1~2积分，禁言每分钟消耗20积分，解除禁言每分钟消耗10积分\n" +
                                     "签到：" + MemberCommand.签到 + "\n" +
                                     "转账：" + MemberCommand.转账 + "@目标+积分数量\n" +
                                     "查询积分：" + MemberCommand.我的积分 + "\n" +
@@ -382,7 +381,7 @@ class GroupHandler(my: Member) : BaseGroupHandler(my) {
             if (message.size >= 3) {
                 when (commandMessage.toString()) {
                     MemberCommand.转账.name -> {
-                        return transfer(message[2], message[3], sender, group)
+                        return scoreTransfer(message[2], message[3], sender, group)
                     }
                     MemberCommand.kban.name -> {
                         return scoreMute(message[2], message[3], sender, event.group)
@@ -717,10 +716,18 @@ class GroupHandler(my: Member) : BaseGroupHandler(my) {
         val memberData = database.getMember(sender.id)
 
         //成员首次签到
-        if (memberData == null || memberData.lastSignTime == 0L) {
+        if (memberData == null) {
             database.add(
-                MemberData(sender.id, sender.nameCardOrNick, 50, now, 1, 0, 0)
+                MemberData(sender.id, sender.nameCardOrNick, 50, now, 1)
             )
+            group.sendMessage("签到成功，首次签到获得50积分！")
+            return true
+        }
+        if (memberData.lastSignTime == 0L) {
+            memberData.lastSignTime = now
+            memberData.continueSignCount = 1
+            memberData.score += 50
+            database.setMember(memberData)
             group.sendMessage("签到成功，首次签到获得50积分！")
             return true
         }
@@ -760,7 +767,7 @@ class GroupHandler(my: Member) : BaseGroupHandler(my) {
     /**
      * 积分转账
      */
-    private suspend fun transfer(
+    private suspend fun scoreTransfer(
         targetMessage: SingleMessage,
         scoreMessage: SingleMessage,
         sender: Member,
@@ -917,7 +924,7 @@ class GroupHandler(my: Member) : BaseGroupHandler(my) {
         val memberData = database.getMember(sender.id)
         //判断积分是否足够
         if (memberData == null || memberData.score < score) {
-            group.sendMessage("积分不足")
+            group.sendMessage("积分不足，需要积分：$score")
             return true
         }
         //扣除积分
