@@ -10,6 +10,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Calendar;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -122,6 +123,17 @@ public class Utils {
             }
         }
         return true;
+    }
+
+    /**
+     * 时间戳保留到天
+     */
+    public static long getDayTime(Calendar calendar) {
+        calendar.set(Calendar.HOUR_OF_DAY, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+        return calendar.getTimeInMillis();
     }
 
 }

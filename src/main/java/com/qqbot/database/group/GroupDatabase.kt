@@ -68,7 +68,7 @@ class GroupDatabase(private val groupId: Long) {
                 "$COLUMN_VIOLATION_COUNT INT NOT NULL COMMENT '连续违规次数', " +
                 "$COLUMN_PERMISSION INT NOT NULL COMMENT '自定义权限', " +
                 "PRIMARY KEY ($COLUMN_GROUP_ID)" +
-                ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;"
+                ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci;"
         connection.createStatement().execute(sql)
     }
 
@@ -123,7 +123,7 @@ class GroupDatabase(private val groupId: Long) {
     /**
      * 查询群员信息
      */
-    fun getMember(id: Long): MemberData? {
+    fun getMemberData(id: Long): MemberData? {
         val sql = "SELECT * FROM $TABLE_NAME WHERE $COLUMN_GROUP_ID = $id"
         val resultSet = connection.createStatement().executeQuery(sql)
         if (resultSet.next()) {
