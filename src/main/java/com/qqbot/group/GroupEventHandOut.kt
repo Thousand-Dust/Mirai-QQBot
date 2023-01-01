@@ -1,6 +1,5 @@
 package com.qqbot.group
 
-import com.qqbot.ai.ChatGPTManager
 import net.mamoe.mirai.Bot
 import net.mamoe.mirai.event.events.*
 
@@ -15,8 +14,8 @@ class GroupEventHandOut(private val bot: Bot) {
     init {
         val groups = bot.groups
         for (group in groups) {
-            val groupHandler = GroupHandler(group[bot.id]!!)
-            if (!groupHandler.onCreate(group)) {
+            val groupHandler = GroupHandler(group, group[bot.id]!!)
+            if (!groupHandler.onCreate()) {
                 continue
             }
             groupHandlers[group.id] = groupHandler
@@ -37,11 +36,10 @@ class GroupEventHandOut(private val bot: Bot) {
             }
             it.subscribeAlways<BotJoinGroupEvent> { event ->
                 val group = event.group
-                val groupHandler = GroupHandler(group[bot.id]!!)
-                if (groupHandler.onCreate(group)) {
+                val groupHandler = GroupHandler(group, group[bot.id]!!)
+                if (groupHandler.onCreate()) {
                     groupHandlers[group.id] = groupHandler
                 }
-
             }
             it.subscribeAlways<BotLeaveEvent> { event ->
                 groupHandlers.remove(event.groupId)

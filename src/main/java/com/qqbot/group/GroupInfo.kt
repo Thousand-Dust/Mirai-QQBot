@@ -1,24 +1,20 @@
 package com.qqbot.group
 
+import com.qqbot.Info
+import com.qqbot.database.group.MemberData
+
 /**
- * 群成员权限
- * @author Thousand-Dust
+ * QQ群成员权限
  */
-enum class Permission(val value: Int) {
+object GroupPermission {
+    const val MEMBER = 0
+    const val ADMIN = 1
+    const val MASTER = 2
+
     /**
-     * 机器人主人
+     * 判断是否为管理员或主人
      */
-    MASTER(0),
-    /**
-     * 群主
-     */
-    OWNER(1),
-    /**
-     * 管理员
-     */
-    ADMIN(2),
-    /**
-     * 群成员
-     */
-    MEMBER(3),
+    fun MemberData.isOperator(): Boolean {
+        return this.permission >= ADMIN || this.id == Info.RootManagerId
+    }
 }
