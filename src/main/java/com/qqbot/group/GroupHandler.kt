@@ -7,6 +7,7 @@ import com.qqbot.Utils
 import com.qqbot.database.group.GroupDatabase
 import com.qqbot.database.group.MemberData
 import com.qqbot.group.msg.proc.GroupManager
+import com.qqbot.group.msg.proc.GroupOwner
 import com.qqbot.group.msg.proc.GroupScore
 import kotlinx.coroutines.*
 import net.mamoe.mirai.contact.*
@@ -27,6 +28,9 @@ class GroupHandler(myGroup: Group, my: Member) : GroupEventHandler(myGroup, my) 
     private val database = GroupDatabase(myGroup.id)
 
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
+
+    //群主系统
+    private val groupOwner = GroupOwner(this, database)
 
     //群管系统
     private val groupManager = GroupManager(this, database)
@@ -60,11 +64,14 @@ class GroupHandler(myGroup: Group, my: Member) : GroupEventHandler(myGroup, my) 
                         menuStr = StringBuilder()
                             .append("菜单：\n")
                             .append("主人系统(还没写)\n")
-                            .append("群主系统(还没写)\n")
+                            .append(groupOwner.getDesc())
+                            .append("\n")
                             .append(groupManager.getDesc())
                             .append("\n")
                             .append(scoreManager.getDesc())
                             .toString()
+                    } else if (msgStr == groupOwner.getName()) {
+                        menuStr = groupOwner.getMenu(event)
                     } else if (msgStr == groupManager.getName()) {
                         menuStr = groupManager.getMenu(event)
                     } else if (msgStr == scoreManager.getName()) {
@@ -73,6 +80,13 @@ class GroupHandler(myGroup: Group, my: Member) : GroupEventHandler(myGroup, my) 
                     if (menuStr != null) {
                         event.subject.sendMessage(menuStr)
                     }
+                }
+
+                /**
+                 * 群主系统
+                 */
+                if (groupOwner.process(event)) {
+                    return@launch
                 }
 
                 //群管系统
@@ -187,10 +201,10 @@ class GroupHandler(myGroup: Group, my: Member) : GroupEventHandler(myGroup, my) 
     private suspend fun violationMute(sender: Member, group: Group) {
         val senderId = sender.id
         //修改群员违规信息
-        var memberData = database.getMemberData(senderId)
+        var memberData = database.getMember(senderId)
         if (memberData == null) {
             memberData = MemberData(senderId, sender.nameCardOrNick)
-            database.add(memberData)
+            database.addMember(memberData)
         }
         //判断48小时内是否有多次违规
         if (System.currentTimeMillis() - memberData.lastViolationTime < (TimeMillisecond.DAY * 2)) {
@@ -249,24 +263,6 @@ class GroupHandler(myGroup: Group, my: Member) : GroupEventHandler(myGroup, my) 
             event.group.sendMessage(at + " 违规行为，发送假红包")
             return true
         }
-        return false
-    }
-
-
-    /**
-     * 机器人权限检查 TODO: 未完成
-     * @param group 群
-     * @param target 被操作对象 如果不为空，则检查机器人是否有对其操作的权限
-     * @param sender 操作者 如果不为空，那么 [target] 不能为空，检查机器人和 [sender]是否有对 [target] 操作的权限
-     * @return 机器人是否有权限可以执行操作
-     */
-    private suspend fun checkPermission(group: Group, target: Member? = null, sender: Member? = null): Boolean {
-        if (group.botPermission.isOperator()) {
-            return true
-        }
-        if (target != null && sender != null) {
-        }
-        group.sendMessage("机器人权限不足")
         return false
     }
 

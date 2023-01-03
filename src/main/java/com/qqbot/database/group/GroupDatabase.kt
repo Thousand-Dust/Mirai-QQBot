@@ -82,7 +82,7 @@ class GroupDatabase(private val groupId: Long) {
     /**
      * 插入群成员信息
      */
-    fun add(groupMember: MemberData) {
+    fun addMember(groupMember: MemberData) {
         val sql = "INSERT INTO $TABLE_NAME VALUES (" +
                 "${groupMember.id}, " +
                 "'${groupMember.name}', " +
@@ -123,7 +123,7 @@ class GroupDatabase(private val groupId: Long) {
     /**
      * 查询群员信息
      */
-    fun getMemberData(id: Long): MemberData? {
+    fun getMember(id: Long): MemberData? {
         val sql = "SELECT * FROM $TABLE_NAME WHERE $COLUMN_GROUP_ID = $id"
         val resultSet = connection.createStatement().executeQuery(sql)
         if (resultSet.next()) {
@@ -148,6 +148,30 @@ class GroupDatabase(private val groupId: Long) {
         val sql = "SELECT * FROM $TABLE_NAME ORDER BY $COLUMN_SCORE DESC LIMIT 10"
         val resultSet = connection.createStatement().executeQuery(sql)
         val list = ArrayList<MemberData>(10)
+        while (resultSet.next()) {
+            list.add(
+                MemberData(
+                    resultSet.getLong(COLUMN_GROUP_ID),
+                    resultSet.getString(COLUMN_GROUP_NAME),
+                    resultSet.getInt(COLUMN_SCORE),
+                    resultSet.getLong(COLUMN_LAST_SIGN_TIME),
+                    resultSet.getInt(COLUMN_CONTINUE_SIGN_COUNT),
+                    resultSet.getLong(COLUMN_LAST_VIOLATION_TIME),
+                    resultSet.getInt(COLUMN_VIOLATION_COUNT),
+                    resultSet.getInt(COLUMN_PERMISSION)
+                )
+            )
+        }
+        return list
+    }
+
+    /**
+     * 查询权限为某个值的群员列表
+     */
+    fun getPermissions(permission: Int): List<MemberData> {
+        val sql = "SELECT * FROM $TABLE_NAME WHERE $COLUMN_PERMISSION=$permission"
+        val resultSet = connection.createStatement().executeQuery(sql)
+        val list = ArrayList<MemberData>()
         while (resultSet.next()) {
             list.add(
                 MemberData(
