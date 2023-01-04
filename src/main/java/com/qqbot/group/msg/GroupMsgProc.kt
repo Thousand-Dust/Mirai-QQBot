@@ -23,12 +23,12 @@ abstract class GroupMsgProc(protected val groupHandler: GroupEventHandler, prote
     /**
      * 获取群消息处理器的名字
      */
-    abstract fun getName(): String
+    abstract fun getName(): String?
 
     /**
      * 获取群消息处理器在菜单的描述
      */
-    abstract fun getDesc(): String
+    abstract fun getDesc(): String?
 
     /**
      * 显示群消息处理器的功能菜单

@@ -1,5 +1,6 @@
 package com.qqbot.group.msg.proc
 
+import com.qqbot.Info
 import com.qqbot.TimeMillisecond
 import com.qqbot.TimeSecond
 import com.qqbot.Utils
@@ -45,11 +46,15 @@ class GroupScore(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
         //增加的积分，随机1~2
         var addScore = (System.currentTimeMillis() % 2).toInt()
         //消息字符串长度大于5，增加1积分
-        if (event.message.contentToString().length > 5) {
+        if (event.message.contentToString().length >= 5) {
             addScore += 1
         }
         //一分钟内发言超过20条，不再加积分
-        if (cacheStreamCall { it.filter { it.sender.id == member.id }.count() } > 20) {
+        val currentTime = System.currentTimeMillis()
+        if (cacheStreamCall { stream ->
+                stream.skip((Integer.max(0, cacheSize() - Info.CHECK_EVENT_COUNT * 3)).toLong())
+                    .filter { it.sender.id == member.id && currentTime - it.time < 60 }.count()
+            } > 20) {
             addScore = 0
         }
         if (memberData == null) {
@@ -76,7 +81,7 @@ class GroupScore(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
         return "积分系统：\n" +
                 "每条发言随机获得1~2积分，禁言每分钟消耗20积分，解除禁言每分钟消耗10积分\n" +
                 "签到：" + Command.签到 + "\n" +
-                "转账：" + Command.转账 + "@目标+积分数量 (额外扣除10%)\n" +
+                "转账：" + Command.转账 + "@目标+积分数量 (额外扣除15%)\n" +
                 "查询积分：" + Command.我的积分 + "\n" +
                 "积分排行榜：" + Command.积分排行榜 + "\n" +
                 "禁言：" + Command.kban + "@目标+时间和单位 (s秒,m分钟,h小时)\n" +
@@ -228,7 +233,7 @@ class GroupScore(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
     }
 
     /**
-     * 积分转账，并扣除手续费10%
+     * 积分转账，并扣除手续费15%
      */
     private suspend fun scoreTransfer(
         targetMessage: SingleMessage,
@@ -262,9 +267,9 @@ class GroupScore(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
             return true
         }
         //需要扣除的积分
-        val needScore = (score * 1.1).toInt()
+        val needScore = (score * 1.15).toInt()
         if (senderData.score < needScore) {
-            group.sendMessage("你的积分不足，需要${needScore}积分，其中额外扣除的积分为${(score * 0.1).toInt()}")
+            group.sendMessage("你的积分不足，需要${needScore}积分，其中额外扣除的积分为${(score * 0.15).toInt()}")
             return true
         }
         //扣除转账人积分
@@ -278,7 +283,7 @@ class GroupScore(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
             targetData.score += score
             database.setMember(targetData)
         }
-        group.sendMessage("转账成功，额外扣除积分${(score * 0.1).toInt()}")
+        group.sendMessage("转账成功，额外扣除积分${(score * 0.15).toInt()}")
         return true
     }
 
