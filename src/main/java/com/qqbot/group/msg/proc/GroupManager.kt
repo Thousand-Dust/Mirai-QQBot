@@ -275,7 +275,7 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabase) : G
         }
         group[targetId]?.let {
             //检查权限
-            if (checkPermission(database, group, it, sender)) {
+            if (!checkPermission(database, group, it, sender)) {
                 return false
             }
         }

@@ -11,17 +11,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Calendar;
-import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * @author Thousand Dust
  */
 public class Utils {
-
-    /**
-     * 文件操作
-     */
 
     /**
      * 读取文件内容
@@ -55,7 +49,6 @@ public class Utils {
 
     /**
      * 向文件写入内容
-     *
      * @param path    文件路径
      * @param content 内容
      * @param append  是否追加
