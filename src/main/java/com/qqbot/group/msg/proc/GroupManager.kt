@@ -8,6 +8,7 @@ import com.qqbot.group.checkPermission
 import com.qqbot.group.msg.GroupMsgProc
 import net.mamoe.mirai.contact.Group
 import net.mamoe.mirai.contact.Member
+import net.mamoe.mirai.contact.isBotMuted
 import net.mamoe.mirai.contact.isOperator
 import net.mamoe.mirai.event.events.GroupMessageEvent
 import net.mamoe.mirai.message.data.*
@@ -99,6 +100,9 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabase) : G
      * @return 是否处理了该事件
      */
     private suspend fun command(event: GroupMessageEvent): Boolean {
+        if (event.group.isBotMuted) {
+            return false
+        }
         val message = event.message
         //消息发送对象
         val sender = event.sender
