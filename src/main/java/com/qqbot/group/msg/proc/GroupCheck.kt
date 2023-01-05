@@ -63,12 +63,16 @@ class GroupCheck(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
         if (message.filterIsInstance<PlainText>().isEmpty()) return false
 
         val msgStr = message.contentToString()
+        if (msgStr.length > 128 || msgStr.replace(" ", "").isEmpty()) return false
 
-        if (textClassifier.categorize(msgStr) == "脏话") {
-//            if (!checkPermission(database, event.group, event.sender, isSendMsg = false)) return false
-//            event.message.recall()
-//            event.group.sendMessage(At(event.sender) + " 请注意言辞！")
-//            return true
+        val label = textClassifier.categorize(msgStr)
+        when (label) {
+            "脏话" -> {
+                if (!checkPermission(database, event.group, event.sender, isSendMsg = false)) return false
+//                event.message.recall()
+                event.group.sendMessage(At(event.sender) + " 请注意言辞！")
+                return true
+            }
         }
 
         return false
@@ -90,7 +94,7 @@ class GroupCheck(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
             for (i in cacheSize() - 1 downTo cacheSize() - Info.CHECK_EVENT_COUNT) {
                 val cache = getCache(i)
                 //同一个人一分钟内发送的消息
-                if (cache.sender.id == senderId && lastTime - cache.time <= 35) {
+                if (cache.sender.id == senderId && lastTime - cache.time <= 30) {
                     count++
                 } else {
                     break

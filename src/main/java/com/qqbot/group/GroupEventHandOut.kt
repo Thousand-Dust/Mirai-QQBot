@@ -25,7 +25,6 @@ class GroupEventHandOut(private val bot: Bot) {
     fun subScribe() {
         bot.eventChannel.let {
             it.subscribeAlways<GroupMessageEvent> { event ->
-                event.toString()
                 groupHandlers[event.group.id]?.acceptMessage(event)
             }
             it.subscribeAlways<MemberJoinEvent> { event ->

@@ -11,6 +11,7 @@ import com.qqbot.group.checkPermission
 import com.qqbot.group.msg.GroupMsgProc
 import net.mamoe.mirai.contact.Group
 import net.mamoe.mirai.contact.Member
+import net.mamoe.mirai.contact.isBotMuted
 import net.mamoe.mirai.contact.nameCardOrNick
 import net.mamoe.mirai.event.events.GroupMessageEvent
 import net.mamoe.mirai.message.data.At
@@ -40,6 +41,12 @@ class GroupScore(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
     }
 
     override suspend fun process(event: GroupMessageEvent): Boolean {
+        if (event.group.isBotMuted) {
+            return false
+        }
+        if (myGroup.id == 167902070L) {
+            return false
+        }
         //发言增加积分
         val member = event.sender
         var memberData = database.getMember(member.id)
@@ -61,7 +68,11 @@ class GroupScore(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
             memberData = MemberData(member.id, member.nameCardOrNick, addScore)
             database.addMember(memberData)
         } else {
-            memberData.name = member.nameCardOrNick
+            var nameCardOrNick = member.nameCardOrNick
+            if (nameCardOrNick.length > 32) {
+                nameCardOrNick = nameCardOrNick.substring(0, 32)
+            }
+            memberData.name = nameCardOrNick
             memberData.score += addScore
             database.setMember(memberData)
         }
@@ -69,15 +80,24 @@ class GroupScore(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
         return command(event)
     }
 
-    override fun getName(): String {
+    override fun getName(): String? {
+        if (myGroup.id == 167902070L) {
+            return null
+        }
         return "积分系统"
     }
 
-    override fun getDesc(): String {
+    override fun getDesc(): String? {
+        if (myGroup.id == 167902070L) {
+            return null
+        }
         return "积分系统(公开可用)"
     }
 
-    override fun getMenu(event: GroupMessageEvent): String {
+    override fun getMenu(event: GroupMessageEvent): String? {
+        if (myGroup.id == 167902070L) {
+            return null
+        }
         return "积分系统：\n" +
                 "每条发言随机获得1~2积分，禁言每分钟消耗20积分，解除禁言每分钟消耗10积分\n" +
                 "签到：" + Command.签到 + "\n" +
@@ -148,30 +168,6 @@ class GroupScore(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
             }
             return false
         }
-
-        if (message.size == 3 && commandMessage is At) {
-            if (commandMessage.target == my.id) {
-                val group = event.group
-                /*val singleMessage = message[2]
-                if (singleMessage !is PlainText || message.size > 3) {
-                    group.sendMessage(message.quote() + "不支持的消息类型")
-                    return true
-                }
-                val strMsg = singleMessage.contentToString()
-                try {
-                    group.sendMessage(message.quote() + chatGPTManager.getChatResponse(event.sender.id, strMsg))
-                } catch (e: IllegalStateException) {
-                    if (!e.toString().contains("Send message failed")) {
-                        group.sendMessage(message.quote() + "错误：$e")
-                    }
-                } catch (e: Exception) {
-                    group.sendMessage(message.quote() + "错误：$e")
-                }*/
-                group.sendMessage("小冰暂不支持聊天哦")
-                return true
-            }
-            return false
-        }
         return false
     }
 
@@ -221,7 +217,7 @@ class GroupScore(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
             }
             //连续签到奖励
             val fromScore = min(7 + memberData.continueSignCount * 3, 38)
-            val untilScore = min(30 + memberData.continueSignCount * 5, 78)
+            val untilScore = min(30 + memberData.continueSignCount * 5, 68)
             //生成随机数为签到的积分
             val randomScore = Random.nextInt(fromScore, untilScore)
             memberData.score += randomScore

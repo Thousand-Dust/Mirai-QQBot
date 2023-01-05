@@ -8,6 +8,7 @@ import com.qqbot.group.GroupPermission
 import com.qqbot.group.GroupPermission.isOperator
 import com.qqbot.group.msg.GroupMsgProc
 import net.mamoe.mirai.contact.Group
+import net.mamoe.mirai.contact.isBotMuted
 import net.mamoe.mirai.contact.isOperator
 import net.mamoe.mirai.contact.isOwner
 import net.mamoe.mirai.event.events.GroupMessageEvent
@@ -40,7 +41,7 @@ class GroupOwner(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
     }
 
     override fun getMenu(event: GroupMessageEvent): String? {
-        if (!(event.sender.permission.isOwner() || event.sender.id == Info.RootManagerId)) {
+        if (!(event.sender.permission.isOwner() || event.sender.id == Info.RootManagerId) || event.group.isBotMuted) {
             return null
         }
         return "群主系统：\n" +

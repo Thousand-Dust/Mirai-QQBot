@@ -1,11 +1,7 @@
 package com.qqbot.group
 
-import com.qqbot.Info
-import com.qqbot.TimeMillisecond
-import com.qqbot.TimeSecond
-import com.qqbot.Utils
+import com.qqbot.ai.TextClassifier
 import com.qqbot.database.group.GroupDatabase
-import com.qqbot.database.group.MemberData
 import com.qqbot.group.msg.GroupMsgProc
 import com.qqbot.group.msg.proc.GroupCheck
 import com.qqbot.group.msg.proc.GroupManager
@@ -17,9 +13,6 @@ import net.mamoe.mirai.event.events.GroupMessageEvent
 import net.mamoe.mirai.event.events.MemberJoinEvent
 import net.mamoe.mirai.event.events.MemberLeaveEvent
 import net.mamoe.mirai.message.data.*
-import net.mamoe.mirai.message.data.MessageSource.Key.recall
-import java.lang.Integer.max
-import java.util.stream.Collectors
 
 /**
  * 单个群的消息处理类
@@ -68,7 +61,7 @@ class GroupHandler(myGroup: Group, my: Member) : GroupEventHandler(myGroup, my) 
                 val message = event.message
 
                 //显示菜单
-                if (message.size == 2 && message[1] is PlainText) {
+                if (message.size == 2 && message[1] is PlainText && !event.group.isBotMuted) {
                     //发送的菜单消息内容
                     var menuStr: String? = null
 
@@ -97,15 +90,17 @@ class GroupHandler(myGroup: Group, my: Member) : GroupEventHandler(myGroup, my) 
                     }
                     if (menuStr != null) {
                         event.group.sendMessage(menuStr)
+                        return@launch
                     }
                 }
 
                 //处理消息
                 for (msgProc in msgProcList) {
                     if (msgProc.process(event)) {
-                        break
+                        return@launch
                     }
                 }
+
             } catch (e: Exception) {
                 event.group.sendMessage("错误：${e.message}")
             }

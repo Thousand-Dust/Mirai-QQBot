@@ -9,6 +9,7 @@ import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.InputStream
 import java.io.OutputStream
+import java.util.*
 
 /**
  * 基于OpenNLP的文本分类器
@@ -29,9 +30,10 @@ class TextClassifier {
      * 文本分类
      */
     fun categorize(text: String): String {
-        val probs = classifier.categorize(text.chunked(1).toTypedArray())
+        val formatText = text.formatForClassifier()
+        val probs = classifier.categorize(formatText.split(" ").toTypedArray())
         val label = classifier.getBestCategory(probs)
-        saveData(label, text)
+        saveData(label, formatText)
         return label
     }
 
@@ -41,7 +43,7 @@ class TextClassifier {
     fun saveData(label: String, text: String) {
         Utils.writeFile(
             "$modelFileName.add",
-            "$label ${text.chunked(1).joinToString(" ")}\n".toByteArray(),
+            "$label ${text.formatForClassifier()}\n".toByteArray(),
             true
         )
     }
@@ -51,17 +53,16 @@ class TextClassifier {
      */
     fun drillModel(): DoccatModel {
         // 准备训练数据
-        val dataIn: InputStream = FileInputStream("$modelFileName.txt")
+        val dataIn: InputStream = FileInputStream("${modelFileName}.txt")
         val lineStream: ObjectStream<String> = PlainTextByLineStream({ dataIn }, "UTF-8")
         val sampleStream: ObjectStream<DocumentSample> = DocumentSampleStream(lineStream)
         // 训练文本分类器
         val mlParams = TrainingParameters()
         mlParams.put(TrainingParameters.ALGORITHM_PARAM, "MAXENT")
-        mlParams.put(TrainingParameters.CUTOFF_PARAM, 5)
-        mlParams.put(TrainingParameters.ITERATIONS_PARAM, 10)
-        mlParams.put(TrainingParameters.CUTOFF_PARAM, 1)
+        mlParams.put(TrainingParameters.CUTOFF_PARAM, 15)
+        mlParams.put(TrainingParameters.ITERATIONS_PARAM, 128)
         val factory = DoccatFactory()
-        val model = DocumentCategorizerME.train("en", sampleStream, mlParams, factory)
+        val model = DocumentCategorizerME.train("ch", sampleStream, mlParams, factory)
         val modelOut: OutputStream = FileOutputStream("$modelFileName.bin")
         model.serialize(modelOut)
         return model
