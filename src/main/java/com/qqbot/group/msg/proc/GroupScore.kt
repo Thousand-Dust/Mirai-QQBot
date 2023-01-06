@@ -44,9 +44,6 @@ class GroupScore(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
         if (event.group.isBotMuted) {
             return false
         }
-        if (myGroup.id == 167902070L) {
-            return false
-        }
         //发言增加积分
         val member = event.sender
         var memberData = database.getMember(member.id)
@@ -80,24 +77,15 @@ class GroupScore(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
         return command(event)
     }
 
-    override fun getName(): String? {
-        if (myGroup.id == 167902070L) {
-            return null
-        }
+    override fun getName(): String {
         return "积分系统"
     }
 
-    override fun getDesc(): String? {
-        if (myGroup.id == 167902070L) {
-            return null
-        }
+    override fun getDesc(): String {
         return "积分系统(公开可用)"
     }
 
-    override fun getMenu(event: GroupMessageEvent): String? {
-        if (myGroup.id == 167902070L) {
-            return null
-        }
+    override fun getMenu(event: GroupMessageEvent): String {
         return "积分系统：\n" +
                 "每条发言随机获得1~2积分，禁言每分钟消耗20积分，解除禁言每分钟消耗10积分\n" +
                 "签到：" + Command.签到 + "\n" +
