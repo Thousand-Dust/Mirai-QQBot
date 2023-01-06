@@ -1,6 +1,5 @@
 package com.qqbot.group
 
-import com.qqbot.ai.TextClassifier
 import com.qqbot.database.group.GroupDatabase
 import com.qqbot.group.msg.GroupMsgProc
 import com.qqbot.group.msg.proc.GroupCheck
@@ -28,10 +27,13 @@ class GroupHandler(myGroup: Group, my: Member) : GroupEventHandler(myGroup, my) 
 
     //群主系统
     private lateinit var groupOwner: GroupOwner
+
     //群管系统
     private lateinit var groupManager: GroupManager
+
     //群消息检测系统
     private lateinit var groupCheck: GroupCheck
+
     //积分系统
     private lateinit var groupScore: GroupScore
 
@@ -41,11 +43,19 @@ class GroupHandler(myGroup: Group, my: Member) : GroupEventHandler(myGroup, my) 
         groupManager = GroupManager(this, database)
         groupCheck = GroupCheck(this, database)
         groupScore = GroupScore(this, database)
+
+        if (myGroup.botPermission < MemberPermission.ADMINISTRATOR) {
+            msgProcList.add(groupCheck)
+            return true
+        }
+
         //按顺序添加消息处理器
         msgProcList.add(groupOwner)
         msgProcList.add(groupManager)
         msgProcList.add(groupCheck)
-        msgProcList.add(groupScore)
+        if (myGroup.id != 167902070L) {
+            msgProcList.add(groupScore)
+        }
         return true
     }
 
@@ -108,6 +118,9 @@ class GroupHandler(myGroup: Group, my: Member) : GroupEventHandler(myGroup, my) 
     }
 
     override fun onMemberJoin(event: MemberJoinEvent) {
+        if (myGroup.botPermission < MemberPermission.ADMINISTRATOR) {
+            return
+        }
         runBlocking {
             event.group.sendMessage(
                 MessageChainBuilder().append("欢迎新人").append(At(event.member.id)).append(" 加入本群").build()
@@ -116,6 +129,9 @@ class GroupHandler(myGroup: Group, my: Member) : GroupEventHandler(myGroup, my) 
     }
 
     override fun onMemberLeave(event: MemberLeaveEvent) {
+        if (myGroup.botPermission < MemberPermission.ADMINISTRATOR) {
+            return
+        }
         runBlocking {
             if (event is MemberLeaveEvent.Quit) {
                 event.group.sendMessage(At(event.member.id) + " 退出了本群")

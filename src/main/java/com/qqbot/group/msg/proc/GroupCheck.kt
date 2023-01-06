@@ -31,7 +31,6 @@ class GroupCheck(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
         if (checkDirtyWord(event)) {
             return true
         }
-
         if (!checkPermission(database, event.group, event.sender, isSendMsg = false)) return false
         if (brushScreen(event)) {
             return true
@@ -70,7 +69,13 @@ class GroupCheck(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
             "脏话" -> {
                 if (!checkPermission(database, event.group, event.sender, isSendMsg = false)) return false
 //                event.message.recall()
-                event.group.sendMessage(At(event.sender) + " 请注意言辞！")
+//                event.group.sendMessage(At(event.sender) + " 请注意言辞！code: 001")
+                return true
+            }
+            "色情" -> {
+                if (!checkPermission(database, event.group, event.sender, isSendMsg = false)) return false
+//                event.message.recall()
+//                event.group.sendMessage(At(event.sender) + " 请注意言辞！code: 002")
                 return true
             }
         }
@@ -154,7 +159,7 @@ class GroupCheck(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
 
         //检测使用xml卡片发假红包
         val msgStr = message.toString()
-        if (msgStr.contains("<?xml") || msgStr.contains("brief=\"[QQ红包]")) {
+        if (msgStr.contains("<?xml") && msgStr.contains("brief=\"[QQ红包]")) {
             message.recall()
             event.sender.mute(TimeSecond.DAY)
             val at = At(event.sender.id)
