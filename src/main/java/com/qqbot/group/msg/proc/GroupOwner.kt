@@ -26,6 +26,14 @@ class GroupOwner(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
         添加群管,
         删除群管,
         群管列表,
+        开启发言检测,
+        关闭发言检测,
+        开启积分系统,
+        关闭积分系统,
+        开启入群验证,
+        关闭入群验证,
+        开启入群自动审核,
+        关闭入群自动审核,
     }
 
     override suspend fun process(event: GroupMessageEvent): Boolean {

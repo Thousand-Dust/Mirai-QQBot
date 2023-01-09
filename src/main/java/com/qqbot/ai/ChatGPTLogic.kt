@@ -1,21 +1,17 @@
 package com.qqbot.ai
 
 import com.alibaba.fastjson.JSON
-import com.qqbot.Utils
+import com.qqbot.HttpUtils
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
-import java.io.File
 import java.io.IOException
 import java.lang.NullPointerException
 import java.util.*
-import java.util.concurrent.TimeUnit
-import kotlin.concurrent.thread
 
 class ChatGPTLogic {
 
     companion object {
-        private val client = OkHttpClient.Builder().readTimeout(60, TimeUnit.SECONDS).build()
         private var authorization: String = ""
         private var sessionToken: String = ""
         private val overdueTime = 8 * 60_000
@@ -78,7 +74,7 @@ class ChatGPTLogic {
                 .headers(head.add("cookie", cookie).build())
                 .post(body.toRequestBody("application/json;charset=utf-8".toMediaType()))
                 .build()
-            client.newCall(request).execute()
+            HttpUtils.instance.newCall(request).execute()
         } catch (e: IOException) {
             throw IOException("请求超时，请重试, " + e.message)
         }
@@ -130,8 +126,7 @@ class ChatGPTLogic {
             )
             .get()
             .build()
-        val response = client.newCall(request).execute()
-        client.newCall(request).execute()
+        val response = HttpUtils.instance.newCall(request).execute()
         //get token from cookie
         /*sessionToken = response.headers.values("set-cookie").let {
             for (str in  it) {
