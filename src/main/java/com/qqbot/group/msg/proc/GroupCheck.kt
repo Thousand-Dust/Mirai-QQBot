@@ -82,19 +82,19 @@ class GroupCheck(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
                 event.group.sendMessage(At(event.sender) + " 请注意言辞！code: 001")
                 return true
             }
-            "色情" -> {
+            /*"色情" -> {
                 if (checkPermission(database, event.group, event.sender, isSendMsg = false)) {
 //                  event.message.recall()
                 }
                 event.group.sendMessage(At(event.sender) + " 请注意言辞！code: 002")
                 return true
-            }
+            }*/
             "广告" -> {
                 if (!checkPermission(database, event.group, event.sender, isSendMsg = false)) return false
                 event.message.recall()
                 event.group.sendMessage(At(event.sender) + " 禁止打广告！")
             }
-            "其他" -> {
+            /*"其他" -> {
                 if (!checkPermission(database, event.group, event.sender, isSendMsg = false)) return false
                 val historyMsg = cacheStreamCall { stream ->
                     //跳过事件缓存的前面，留下最后 [com.qqbot.Info.CHECK_EVENT_COUNT] 条缓存用于检测
@@ -113,12 +113,12 @@ class GroupCheck(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
                         count++
                     }
                 }
-                if (count >= 3) {
+                if (count > 3) {
                     event.message.recall()
                     event.group.sendMessage(At(event.sender) + " 请不要频繁发送无意义消息刷屏！")
                     return true
                 }
-            }
+            }*/
         }
 
         return false
@@ -171,7 +171,8 @@ class GroupCheck(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
         //checkedMsgRecord列表最后 [Info.CHECK_EVENT_COUNT_MAX1] 条记录为重复内容，判断为刷屏
         if (checkedMsgRecord.count() >= Info.CHECK_EVENT_COUNT_MAX1) {
             for (i in checkedMsgRecord.count() - 1 downTo checkedMsgRecord.count() - Info.CHECK_EVENT_COUNT_MAX1) {
-                if (!Utils.messageChainEqual(message, checkedMsgRecord[i].message) || lastTime - checkedMsgRecord[i].message.time > TimeSecond.MINUTE*10) {
+                if (lastTime - checkedMsgRecord[i].message.time > TimeSecond.HOUR || !Utils.messageChainEqual(message, checkedMsgRecord[i].message))
+                {
                     return false
                 }
             }

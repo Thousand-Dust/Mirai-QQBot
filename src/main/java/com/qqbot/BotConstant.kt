@@ -1,7 +1,5 @@
 package com.qqbot
 
-import com.qqbot.database.group.MemberData
-
 /**
  * 基本信息
  */
@@ -22,6 +20,11 @@ object Info {
 
     //刷屏检测判定为刷屏的重复消息数量
     const val CHECK_EVENT_COUNT_MAX1 = 3
+}
+
+object HttpUrl {
+    //摸鱼人日历接口
+    const val FishCalendar = "https://j4u.ink/moyuya"
 }
 
 /**

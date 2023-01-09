@@ -102,8 +102,8 @@ class GroupScore(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
         message.sourceOrNull
         //命令消息（消息头）
         val commandMessage = message[1]
-        //必须群主或管理，且消息是纯文本开头
 
+        //必须群主或管理，且消息是纯文本开头
         if (commandMessage is PlainText) {
             val group = event.group
             val sender = event.sender
