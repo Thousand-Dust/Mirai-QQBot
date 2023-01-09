@@ -23,13 +23,13 @@ suspend fun checkPermission(database: GroupDatabase, group: Group, target: Membe
         return false
     }
     //检查机器人是否有对目标执行操作的权限
-    val targetData = database.getMember(target.id) ?: MemberData(target.id, target.nameCardOrNick)
-    if (group.botPermission.level <= target.permission.level || group.botPermission.level < targetData.permission) {
+    if (group.botPermission.level <= target.permission.level) {
         if (isSendMsg) {
             group.sendMessage("机器人权限不足")
         }
         return false
     }
+    val targetData = database.getMember(target.id) ?: MemberData(target.id, target.nameCardOrNick)
     if (sender != null) {
         val senderData = database.getMember(sender.id) ?: MemberData(sender.id, sender.nameCardOrNick)
         //检查操作者是否有对目标执行操作的权限
@@ -45,6 +45,12 @@ suspend fun checkPermission(database: GroupDatabase, group: Group, target: Membe
             }
             return false
         }
+    }
+    if (group.botPermission.level <= targetData.permission) {
+        if (isSendMsg) {
+            group.sendMessage("机器人权限不足")
+        }
+        return false
     }
     return true
 }

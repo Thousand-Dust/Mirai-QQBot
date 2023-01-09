@@ -52,6 +52,7 @@ abstract class GroupEventHandler(val myGroup: Group, val my: Member) {
         if (eventCache.size >= Info.EVENT_CACHE_MAX_SIZE) {
             eventCache.removeFirst()
         }
+        event.source
         eventCache.add(event)
     }
 

@@ -20,6 +20,7 @@ import net.mamoe.mirai.message.data.SingleMessage
 import net.mamoe.mirai.message.data.sourceOrNull
 import java.util.*
 import kotlin.collections.ArrayList
+import kotlin.math.max
 import kotlin.math.min
 import kotlin.random.Random
 
@@ -47,20 +48,13 @@ class GroupScore(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
         //发言增加积分
         val member = event.sender
         var memberData = database.getMember(member.id)
-        //增加的积分，随机1~2
+        //增加的积分，随机0~1
         var addScore = (System.currentTimeMillis() % 2).toInt()
         //消息字符串长度大于5，增加1积分
         if (event.message.contentToString().length >= 5) {
             addScore += 1
         }
-        //一分钟内发言超过20条，不再加积分
-        val currentTime = System.currentTimeMillis()
-        if (cacheStreamCall { stream ->
-                stream.skip((Integer.max(0, cacheSize() - Info.CHECK_EVENT_COUNT * 3)).toLong())
-                    .filter { it.sender.id == member.id && currentTime - it.time < 60 }.count()
-            } > 20) {
-            addScore = 0
-        }
+
         if (memberData == null) {
             memberData = MemberData(member.id, member.nameCardOrNick, addScore)
             database.addMember(memberData)
@@ -94,8 +88,8 @@ class GroupScore(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
                 "积分排行榜：" + Command.积分排行榜 + "\n" +
                 "禁言：" + Command.kban + "@目标+时间和单位 (s秒,m分钟,h小时)\n" +
                 "解禁：" + Command.kj + "@目标\n" +
-//                "抢劫：" + MemberCommand.抢劫 + "@目标+积分数量\n" +
-//                "抢劫规则：" + MemberCommand.抢劫规则 + "\n" +
+//                "抢劫：" + Command.抢劫 + "@目标+积分数量\n" +
+//                "抢劫规则：" + Command.抢劫规则 + "\n" +
                 "其他功能待更新..."
     }
 
@@ -131,7 +125,7 @@ class GroupScore(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
                     Command.积分排行榜.name -> {
                         return scoreRanking(group)
                     }
-                    /*MemberCommand.抢劫规则.name -> {
+                    /*Command.抢劫规则.name -> {
                         return robRule(group)
                     }*/
                 }
@@ -148,7 +142,7 @@ class GroupScore(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
                     Command.kj.name -> {
                         return scoreUnmute(message[2], sender, event.group)
                     }
-                    /*MemberCommand.抢劫.name -> {
+                    /*Command.抢劫.name -> {
                         return scoreRob(sender, message[2], message[3], event.group)
                     }*/
                 }
@@ -363,7 +357,7 @@ class GroupScore(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
             database.setMember(senderData)
             database.setMember(targetData)
             group.sendMessage("抢劫成功，你获得了${score}积分。并被警察关进了监狱")
-            sender.mute(score * 0.1.toInt() * TimeSecond.MINUTE)
+            sender.mute(max(5, (score * 0.1).toInt()) * TimeSecond.MINUTE)
         } else {
             //抢劫失败
             senderData.score -= score
@@ -371,7 +365,7 @@ class GroupScore(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
             database.setMember(senderData)
             database.setMember(targetData)
             group.sendMessage("抢劫失败，你失去了${score}积分。并被警察关进了监狱")
-            sender.mute(score * 0.1.toInt() * TimeSecond.MINUTE)
+            sender.mute(max(5, (score * 0.1).toInt()) * TimeSecond.MINUTE)
         }
         return true
     }
