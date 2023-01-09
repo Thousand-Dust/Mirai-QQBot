@@ -22,6 +22,9 @@ class GroupEventHandOut(private val bot: Bot) {
         }
     }
 
+    /**
+     * 绑定事件
+     */
     fun subScribe() {
         bot.eventChannel.let {
             it.subscribeAlways<GroupMessageEvent> { event ->

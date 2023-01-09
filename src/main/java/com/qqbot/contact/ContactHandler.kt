@@ -13,7 +13,7 @@ import java.util.concurrent.ThreadPoolExecutor.AbortPolicy
 /**
  * 好友相关事件
  */
-class ContactHandler() : ContactEventHandler {
+class ContactHandler : ContactEventHandler {
 
     private lateinit var myBot: Bot
 

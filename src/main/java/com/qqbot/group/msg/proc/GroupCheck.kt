@@ -12,6 +12,7 @@ import com.qqbot.group.checkPermission
 import com.qqbot.group.msg.GroupMsgProc
 import net.mamoe.mirai.contact.Group
 import net.mamoe.mirai.contact.Member
+import net.mamoe.mirai.contact.isOperator
 import net.mamoe.mirai.contact.nameCardOrNick
 import net.mamoe.mirai.event.events.GroupMessageEvent
 import net.mamoe.mirai.message.data.At
@@ -19,23 +20,25 @@ import net.mamoe.mirai.message.data.MessageSource.Key.recall
 import net.mamoe.mirai.message.data.PlainText
 import net.mamoe.mirai.message.data.time
 import java.util.stream.Collectors
+import kotlin.math.max
 
 /**
  * 群消息检测系统
  */
 class GroupCheck(groupHandler: GroupEventHandler, database: GroupDatabase) : GroupMsgProc(groupHandler, database) {
 
-    private val textClassifier = TextClassifier()
+    private val textClassifier = TextClassifier("ai/classifier.bin")
 
     override suspend fun process(event: GroupMessageEvent): Boolean {
+        if (checkPermission(database, event.group, event.sender, isSendMsg = false)) {
+            if (brushScreen(event)) {
+                return true
+            }
+            if (illegalMessage(event)) {
+                return true
+            }
+        }
         if (checkDirtyWord(event)) {
-            return true
-        }
-        if (!checkPermission(database, event.group, event.sender, isSendMsg = false)) return false
-        if (brushScreen(event)) {
-            return true
-        }
-        if (illegalMessage(event)) {
             return true
         }
 
@@ -62,21 +65,59 @@ class GroupCheck(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
         if (message.filterIsInstance<PlainText>().isEmpty()) return false
 
         val msgStr = message.contentToString()
-        if (msgStr.length > 128 || msgStr.replace(" ", "").isEmpty()) return false
+        val msgStr1 = msgStr.replace(" ", "")
+        if (msgStr.length > 128 || msgStr1.isEmpty()) return false
+
+        val senderId = event.sender.id
 
         val label = textClassifier.categorize(msgStr)
+        if (!myGroup.botPermission.isOperator()) {
+            return false
+        }
         when (label) {
             "脏话" -> {
-                if (!checkPermission(database, event.group, event.sender, isSendMsg = false)) return false
-//                event.message.recall()
-//                event.group.sendMessage(At(event.sender) + " 请注意言辞！code: 001")
+                if (!checkPermission(database, event.group, event.sender, isSendMsg = false)) {
+//                  event.message.recall()
+                }
+                event.group.sendMessage(At(event.sender) + " 请注意言辞！code: 001")
                 return true
             }
             "色情" -> {
-                if (!checkPermission(database, event.group, event.sender, isSendMsg = false)) return false
-//                event.message.recall()
-//                event.group.sendMessage(At(event.sender) + " 请注意言辞！code: 002")
+                if (checkPermission(database, event.group, event.sender, isSendMsg = false)) {
+//                  event.message.recall()
+                }
+                event.group.sendMessage(At(event.sender) + " 请注意言辞！code: 002")
                 return true
+            }
+            "广告" -> {
+                if (!checkPermission(database, event.group, event.sender, isSendMsg = false)) return false
+                event.message.recall()
+                event.group.sendMessage(At(event.sender) + " 禁止打广告！")
+            }
+            "其他" -> {
+                if (!checkPermission(database, event.group, event.sender, isSendMsg = false)) return false
+                val historyMsg = cacheStreamCall { stream ->
+                    //跳过事件缓存的前面，留下最后 [com.qqbot.Info.CHECK_EVENT_COUNT] 条缓存用于检测
+                    stream.skip((Integer.max(0, cacheSize() - Info.CHECK_EVENT_COUNT)).toLong())
+                        .filter { it.sender.id == senderId }
+                }.collect(Collectors.toList())
+
+                //无意义消息数量
+                var count = 0
+                //倒序遍历 historyMsg
+                for (i in historyMsg.size - 1 downTo historyMsg.size - 6) {
+                    if (i < 0) break
+                    val msgToStr = historyMsg[i].message.contentToString()
+                    val label1 = textClassifier.categorize(msgToStr)
+                    if (label1 == "无意义" || label1 == "其他") {
+                        count++
+                    }
+                }
+                if (count >= 3) {
+                    event.message.recall()
+                    event.group.sendMessage(At(event.sender) + " 请不要频繁发送无意义消息刷屏！")
+                    return true
+                }
             }
         }
 
@@ -99,7 +140,7 @@ class GroupCheck(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
             for (i in cacheSize() - 1 downTo cacheSize() - Info.CHECK_EVENT_COUNT) {
                 val cache = getCache(i)
                 //同一个人一分钟内发送的消息
-                if (cache.sender.id == senderId && lastTime - cache.time <= 30) {
+                if (cache.sender.id == senderId && lastTime - cache.time <= 26) {
                     count++
                 } else {
                     break
@@ -130,7 +171,7 @@ class GroupCheck(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
         //checkedMsgRecord列表最后 [Info.CHECK_EVENT_COUNT_MAX1] 条记录为重复内容，判断为刷屏
         if (checkedMsgRecord.count() >= Info.CHECK_EVENT_COUNT_MAX1) {
             for (i in checkedMsgRecord.count() - 1 downTo checkedMsgRecord.count() - Info.CHECK_EVENT_COUNT_MAX1) {
-                if (!Utils.messageChainEqual(message, checkedMsgRecord[i].message)) {
+                if (!Utils.messageChainEqual(message, checkedMsgRecord[i].message) || lastTime - checkedMsgRecord[i].message.time > TimeSecond.MINUTE*10) {
                     return false
                 }
             }

@@ -14,26 +14,26 @@ import net.mamoe.mirai.event.events.MemberLeaveEvent
 import net.mamoe.mirai.message.data.*
 
 /**
- * 单个群的消息处理类
+ * 单个群的消息总处理类
  * @author Thousand-Dust
  */
 class GroupHandler(myGroup: Group, my: Member) : GroupEventHandler(myGroup, my) {
 
+    //数据库
     private val database = GroupDatabase(myGroup.id)
 
+    //协程作用域
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
 
+    //消息处理器列表
     private val msgProcList = ArrayList<GroupMsgProc>()
 
     //群主系统
     private lateinit var groupOwner: GroupOwner
-
     //群管系统
     private lateinit var groupManager: GroupManager
-
     //群消息检测系统
     private lateinit var groupCheck: GroupCheck
-
     //积分系统
     private lateinit var groupScore: GroupScore
 
@@ -44,6 +44,7 @@ class GroupHandler(myGroup: Group, my: Member) : GroupEventHandler(myGroup, my) 
         groupCheck = GroupCheck(this, database)
         groupScore = GroupScore(this, database)
 
+        //机器人在群里没有管理员权限，只监听群消息检测系统
         if (myGroup.botPermission < MemberPermission.ADMINISTRATOR) {
             msgProcList.add(groupCheck)
             return true
@@ -53,6 +54,7 @@ class GroupHandler(myGroup: Group, my: Member) : GroupEventHandler(myGroup, my) 
         msgProcList.add(groupOwner)
         msgProcList.add(groupManager)
         msgProcList.add(groupCheck)
+        //只在龙祥群开启积分系统
         if (myGroup.id != 167902070L) {
             msgProcList.add(groupScore)
         }
@@ -87,6 +89,11 @@ class GroupHandler(myGroup: Group, my: Member) : GroupEventHandler(myGroup, my) 
                             }
                         }
                         menuStr = sb.toString()
+
+                        if (myGroup.botPermission < MemberPermission.ADMINISTRATOR) {
+                            //没有管理员权限，不显示菜单
+                            menuStr = null
+                        }
                     } else {
                         //匹配群消息处理器菜单
                         for (msgProc in msgProcList) {
@@ -112,7 +119,8 @@ class GroupHandler(myGroup: Group, my: Member) : GroupEventHandler(myGroup, my) 
                 }
 
             } catch (e: Exception) {
-                event.group.sendMessage("错误：${e.message}")
+                event.group.sendMessage("错误：$e")
+                e.printStackTrace()
             }
         }
     }
