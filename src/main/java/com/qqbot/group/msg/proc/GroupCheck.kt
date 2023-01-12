@@ -27,7 +27,7 @@ import kotlin.math.max
  */
 class GroupCheck(groupHandler: GroupEventHandler, database: GroupDatabase) : GroupMsgProc(groupHandler, database) {
 
-    private val textClassifier = TextClassifier("ai/classifier.bin")
+    private val textClassifier = TextClassifier("ai/model.bin")
 
     override suspend fun process(event: GroupMessageEvent): Boolean {
         if (checkPermission(database, event.group, event.sender, isSendMsg = false)) {
