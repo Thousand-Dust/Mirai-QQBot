@@ -33,7 +33,7 @@ class GroupRecreation(groupHandler: GroupHandler, database: GroupDatabase) : Gro
         /**
          * 获取摸鱼人日历图片消息
          */
-        private suspend fun getCalendarMsg(url: String, bot: Bot, group: Group): Image {
+        private suspend fun getCalendarMsg(url: String, pubTime: Long, bot: Bot, group: Group): Image {
             val json: JSONObject =
                 if (File(CalendarDataPath).exists()) {
                     JSON.parseObject(String(Utils.readFile(CalendarDataPath)))
@@ -41,13 +41,14 @@ class GroupRecreation(groupHandler: GroupHandler, database: GroupDatabase) : Gro
                     JSONObject()
                 }
             val calendarUrl: String? = json.getString("url")
+            val calendarPubTime = json.getLong("pub_time") ?: 0
             calendarId = json.getString("id")
 
             val calendarImageFile = File(CalendarImagePath)
             if (calendarImageFile.exists()) {
                 resource = calendarImageFile.toExternalResource()
             }
-            if (url != calendarUrl || calendarId == null || !Image.isUploaded(bot, resource!!.md5, resource!!.size)) {
+            if (url != calendarUrl || pubTime != calendarPubTime || calendarId == null || !Image.isUploaded(bot, resource!!.md5, resource!!.size)) {
                 //下载图片
                 HttpUtils.download(url, CalendarImagePath)
                 //上传图片
@@ -58,6 +59,7 @@ class GroupRecreation(groupHandler: GroupHandler, database: GroupDatabase) : Gro
                 calendarId = image.imageId
                 json["url"] = url
                 json["id"] = calendarId
+                json["pub_time"] = pubTime
                 Utils.writeFile(CalendarDataPath, json.toJSONString().toByteArray(), false)
                 return image
             }
@@ -74,15 +76,15 @@ class GroupRecreation(groupHandler: GroupHandler, database: GroupDatabase) : Gro
     }
 
     override fun getName(): String {
-        return "娱乐系统"
+        return "其他功能"
     }
 
     override fun getDesc(): String {
-        return "娱乐系统(公开可用)"
+        return "其他功能(公开可用)"
     }
 
     override fun getMenu(event: GroupMessageEvent): String {
-        return "娱乐系统：\n" +
+        return "日常与娱乐系统：\n" +
                 Command.摸鱼人日历
     }
 
@@ -118,7 +120,8 @@ class GroupRecreation(groupHandler: GroupHandler, database: GroupDatabase) : Gro
             }
             val data = json.getJSONObject("data")
             val url = data.getString("moyu_url")
-            group.sendMessage(getCalendarMsg(url, my.bot, group))
+            val pubTime = data.getJSONArray("articles").getJSONObject(0).getLong("pub_time") ?: 0
+            group.sendMessage(getCalendarMsg(url, pubTime, my.bot, group))
         } catch (e: IOException) {
             group.sendMessage("请求失败: $e")
         }

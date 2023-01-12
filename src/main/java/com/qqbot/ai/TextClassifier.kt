@@ -9,6 +9,7 @@ import opennlp.tools.util.TrainingParameters
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute
 import org.wltea.analyzer.lucene.IKAnalyzer
 import java.io.*
+import java.util.*
 
 /**
  * 基于OpenNLP的文本分类器
@@ -35,19 +36,23 @@ class TextClassifier(modelPath: String, val dataPaths: Array<String> = arrayOf()
             return "无意义"
         }
         val probs = classifier.categorize(formatText.split(" ").toTypedArray())
-        val label = classifier.getBestCategory(probs)
         //获取probs中最大的概率值的索引
         val maxProb = probs.maxOrNull() ?: probs[0]
         val maxProbIndex = probs.indexOfFirst {
-            it == probs.maxOrNull()
+            it == maxProb
         }
-        //保存结果用于调整模型
-        saveData(if (maxProb < 0.3) "其他" else label, formatText)
-        for (probIndex in probs.indices) {
-            if (probIndex != maxProbIndex && probs[probIndex] * 2 >= maxProb) {
-                return "其他"
+        var label = classifier.getCategory(maxProbIndex)
+        if (maxProb < 0.6) {
+            for (probIndex in probs.indices) {
+                val prob = probs[probIndex]
+                if (probIndex != maxProbIndex && prob * 2 >= maxProb) {
+                    label = "其他"
+                    break
+                }
             }
         }
+        //保存结果用于调整模型
+        saveData(label, formatText)
         return label
     }
 
@@ -94,7 +99,7 @@ class TextClassifier(modelPath: String, val dataPaths: Array<String> = arrayOf()
     /**
      * 训练
      */
-    fun drillModel(inFiles: Array<String>, outFile: String): DoccatModel {
+    fun drillModel(inFiles: Array<String>, outFile: String, iterations: Int = 10000): DoccatModel {
         if (inFiles.isEmpty()) {
             throw IllegalArgumentException("No training files")
         }
@@ -108,8 +113,9 @@ class TextClassifier(modelPath: String, val dataPaths: Array<String> = arrayOf()
         // 训练文本分类器
         val mlParams = TrainingParameters()
         mlParams.put(TrainingParameters.ALGORITHM_PARAM, GISTrainer.MAXENT_VALUE)
-        mlParams.put(TrainingParameters.ITERATIONS_PARAM, 20000)
-        mlParams.put(TrainingParameters.CUTOFF_PARAM, 6)
+//        mlParams.put(TrainingParameters.CUTOFF_PARAM, 7)
+        mlParams.put(TrainingParameters.CUTOFF_PARAM, 0)
+        mlParams.put(TrainingParameters.ITERATIONS_PARAM, iterations)
         mlParams.put(TrainingParameters.THREADS_PARAM, 5)
         mlParams.put(TrainingParameters.TRAINER_TYPE_PARAM, "NAIVE_BAYES")
         val factory = DoccatFactory()
