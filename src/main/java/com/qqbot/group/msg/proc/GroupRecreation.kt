@@ -50,7 +50,7 @@ class GroupRecreation(groupHandler: GroupHandler, database: GroupDatabase) : Gro
             }
             if (url != calendarUrl || pubTime != calendarPubTime || calendarId == null || !Image.isUploaded(bot, resource!!.md5, resource!!.size)) {
                 //下载图片
-                HttpUtils.download(url, CalendarImagePath)
+                Utils.writeFile(CalendarImagePath, HttpUtils.get(url)!!.bytes(), false)
                 //上传图片
                 resource?.close()
                 resource = File(CalendarImagePath).toExternalResource()
@@ -110,7 +110,7 @@ class GroupRecreation(groupHandler: GroupHandler, database: GroupDatabase) : Gro
 
         //发送http请求摸鱼人日历
         try {
-            val response = HttpUtils.get(HttpUrl.FishCalendar)
+            val response = HttpUtils.get(HttpUrl.FishCalendar)!!.string()
             val json = JSON.parseObject(response)
             val code = json.getIntValue("code")
             if (code != 200) {
