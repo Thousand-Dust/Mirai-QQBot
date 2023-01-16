@@ -5,7 +5,6 @@ import okhttp3.OkHttpClient
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.ResponseBody
 import java.io.IOException
-import java.util.zip.GZIPInputStream
 
 object HttpUtils {
     val instance = OkHttpClient()
@@ -14,9 +13,13 @@ object HttpUtils {
      * 发送get请求
      */
     @Throws(IOException::class)
-    fun get(url: String): ResponseBody? {
+    fun get(url: String, params: Map<String, String>? = null): ResponseBody? {
+        val paramsStr = StringBuilder()
+        params?.forEach {
+            paramsStr.append(it.key).append("=").append(it.value).append("&")
+        }
         val request = okhttp3.Request.Builder()
-            .url(url)
+            .url(url + if (paramsStr.isNotEmpty()) "?" + paramsStr.substring(0, paramsStr.length - 1) else "")
             .build()
         val response = instance.newCall(request).execute()
         return response.body

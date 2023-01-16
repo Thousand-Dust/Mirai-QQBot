@@ -58,7 +58,7 @@ class GroupCheck(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
     }
 
     /**
-     * 脏话检测 TODO：测试中
+     * 发言检测 TODO：测试中
      */
     private suspend fun checkDirtyWord(event: GroupMessageEvent): Boolean {
         val message = event.message

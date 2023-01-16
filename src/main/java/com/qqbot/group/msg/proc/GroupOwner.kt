@@ -7,10 +7,7 @@ import com.qqbot.group.GroupEventHandler
 import com.qqbot.group.GroupPermission
 import com.qqbot.group.GroupPermission.isOperator
 import com.qqbot.group.msg.GroupMsgProc
-import net.mamoe.mirai.contact.Group
-import net.mamoe.mirai.contact.isBotMuted
-import net.mamoe.mirai.contact.isOperator
-import net.mamoe.mirai.contact.isOwner
+import net.mamoe.mirai.contact.*
 import net.mamoe.mirai.event.events.GroupMessageEvent
 import net.mamoe.mirai.message.data.At
 import net.mamoe.mirai.message.data.PlainText
@@ -122,6 +119,8 @@ class GroupOwner(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
             }
             message.append("\n")
         }
+        //删除最后一个换行符
+        message.deleteCharAt(message.lastIndex)
         group.sendMessage(message.toString())
     }
 
@@ -142,7 +141,7 @@ class GroupOwner(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
             return true
         }
         if (targetData == null) {
-            database.addMember(MemberData(targetId, target.nameCard, permission = GroupPermission.ADMIN))
+            database.addMember(MemberData(targetId, target.nameCardOrNick, permission = GroupPermission.ADMIN))
             group.sendMessage("添加群管成功")
             return true
         }
