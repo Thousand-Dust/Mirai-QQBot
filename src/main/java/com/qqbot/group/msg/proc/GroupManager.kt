@@ -100,9 +100,6 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabase) : G
      * @return 是否处理了该事件
      */
     private suspend fun command(event: GroupMessageEvent): Boolean {
-        if (event.group.isBotMuted) {
-            return false
-        }
         val message = event.message
         //消息发送对象
         val sender = event.sender
@@ -256,7 +253,7 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabase) : G
             return false
         }
         //检查权限
-        if (!checkPermission(database, group, target, sender)) {
+        if (!my.isOperator()) {
             return false
         }
         target.unmute()
@@ -300,6 +297,7 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabase) : G
                 }
             }
         }
+        group.sendMessage("撤回完毕")
         return true
     }
 

@@ -49,10 +49,7 @@ class GroupHandler(myGroup: Group, my: Member) : GroupEventHandler(myGroup, my) 
         msgProcList.add(groupOwner)
         msgProcList.add(groupManager)
         msgProcList.add(groupCheck)
-        //只在龙祥群开启积分系统
-        if (myGroup.id != 167902070L) {
-            msgProcList.add(groupScore)
-        }
+        msgProcList.add(groupScore)
         msgProcList.add(groupRecreation)
         return true
     }
@@ -63,6 +60,9 @@ class GroupHandler(myGroup: Group, my: Member) : GroupEventHandler(myGroup, my) 
 
     override fun acceptMessage(event: GroupMessageEvent) {
         addCache(event)
+        if (event.message.size < 2) {
+            return
+        }
 
         coroutineScope.launch {
             try {
