@@ -113,7 +113,7 @@ class GroupRecreation(groupHandler: GroupHandler, database: GroupDatabase) : Gro
                 "\n生活与日常系统：\n" +
                 "----------\n以下的(位置)可为：(省/市/区)级行政区，支持查询大多数国家。可模糊搜索指定上级行政区，用(空格)隔开（北京 朝阳）。注意：以下示例中的空格也需要输入\n----------\n" +
                 "查询实时天气：${Command.实时天气} 位置\n" +
-                "查询未来3天内天气：${Command.未来天气} 第几天(0/1/2/3) 位置\n" +
+                "查询3天内天气：${Command.未来天气} 第几天(1/2/3) 位置\n" +
                 "查询天气指数：${Command.天气指数} 位置\n" +
                 "查询日出日落：${Command.日出日落} 第几天 位置\n" +
                 "查询月升月落：${Command.月升月落} 第几天 位置\n" +
@@ -258,8 +258,8 @@ class GroupRecreation(groupHandler: GroupHandler, database: GroupDatabase) : Gro
      */
     private suspend fun threeDayWeather(message: String, group: Group) {
         val splitMsg = message.split(Pattern.compile(" "), 2)
-        if (splitMsg.size != 2 || splitMsg[0] !in listOf("0", "1", "2", "3")) {
-            group.sendMessage("格式错误，正确格式：${Command.未来天气} (0/1/2/3) 城市")
+        if (splitMsg.size != 2 || splitMsg[0] !in listOf("1", "2", "3")) {
+            group.sendMessage("格式错误，正确格式：${Command.未来天气} (1/2/3) 城市")
             return
         }
         val dayNum = splitMsg[0].toInt()
