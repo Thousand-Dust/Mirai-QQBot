@@ -6,14 +6,17 @@ import com.qqbot.HttpUrl
 import com.qqbot.HttpUtils
 import com.qqbot.Info
 import com.qqbot.Utils
+import com.qqbot.api.QWeather
+import com.qqbot.api.sogouTextToAudio
 import com.qqbot.database.group.GroupDatabase
 import com.qqbot.group.GroupHandler
 import com.qqbot.group.msg.GroupMsgProc
-import com.qqbot.weather.*
 import net.mamoe.mirai.Bot
 import net.mamoe.mirai.contact.Group
 import net.mamoe.mirai.event.events.GroupMessageEvent
+import net.mamoe.mirai.message.data.Audio
 import net.mamoe.mirai.message.data.Image
+import net.mamoe.mirai.message.data.sendTo
 import net.mamoe.mirai.message.data.sourceOrNull
 import net.mamoe.mirai.utils.ExternalResource
 import net.mamoe.mirai.utils.ExternalResource.Companion.toExternalResource
@@ -25,8 +28,11 @@ class GroupRecreation(groupHandler: GroupHandler, database: GroupDatabase) : Gro
 
     companion object {
         //摸鱼人日历图片储存路径
-        private const val CalendarImagePath = "data/calendar.png"
-        private const val CalendarDataPath = "data/calendar.txt"
+        private const val CalendarImagePath = "temp/calendar.png"
+        private const val CalendarDataPath = "temp/calendar.txt"
+
+        //语音文件缓存路径
+        private const val AudioCachePath = "temp/audioCache/"
 
         //摸鱼人日历资源文件
         private var resource: ExternalResource? = null
@@ -81,6 +87,7 @@ class GroupRecreation(groupHandler: GroupHandler, database: GroupDatabase) : Gro
 
     private enum class Command {
         摸鱼人日历,
+        说,
         实时天气,
         未来天气,
         天气指数,
@@ -110,6 +117,7 @@ class GroupRecreation(groupHandler: GroupHandler, database: GroupDatabase) : Gro
     override fun getMenu(event: GroupMessageEvent): String {
         return "娱乐系统：\n" +
                 "${Command.摸鱼人日历}\n" +
+                "文字转语音：${Command.说}+文字\n" +
                 "\n生活与日常系统：\n" +
                 "----------\n以下的(位置)可为：(省/市/区)级行政区，支持查询大多数国家。可模糊搜索指定上级行政区，用(空格)隔开（北京 朝阳）。注意：以下示例中的空格也需要输入\n----------\n" +
                 "查询实时天气：${Command.实时天气} 位置\n" +
@@ -132,7 +140,13 @@ class GroupRecreation(groupHandler: GroupHandler, database: GroupDatabase) : Gro
                     return true
                 }
                 else -> {
-                    val splitMsg = commandMessage.toString().split(Pattern.compile(" "), 2)
+                    val msgStr = commandMessage.toString().replace("\\s+".toRegex(), " ")
+                    val splitMsg = msgStr.split(Pattern.compile(" "), 2)
+
+                    if (msgStr.startsWith(Command.说.name)) {
+                        say(msgStr.substring(Command.说.name.length).replace(" ", ""), event.group)
+                        return true
+                    }
                     if (splitMsg.size == 2) {
                         when (splitMsg[0]) {
                             Command.实时天气.name -> realTimeWeather(splitMsg[1], event.group)
@@ -172,6 +186,30 @@ class GroupRecreation(groupHandler: GroupHandler, database: GroupDatabase) : Gro
         } catch (e: IOException) {
             group.sendMessage("请求失败: $e")
         }
+    }
+
+    /**
+     * 文字转语音
+     */
+    private suspend fun say(text: String, group: Group) {
+        if (text.isEmpty()) {
+            group.sendMessage("请不要输入空白内容")
+            return
+        }
+        val file = File(AudioCachePath + text.hashCode() + ".mp3")
+        val response = sogouTextToAudio(text)
+        if (response == null) {
+            group.sendMessage("请求失败")
+            return
+        }
+        Utils.writeFile(file.path, response, false)
+        //上传语音
+        val resource = file.toExternalResource()
+        val audio = resource.use { resource ->
+            group.uploadAudio(resource)
+        }
+        file.delete()
+        group.sendMessage(audio)
     }
 
     /**

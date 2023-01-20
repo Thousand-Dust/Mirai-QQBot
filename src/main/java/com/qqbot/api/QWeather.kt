@@ -1,4 +1,4 @@
-package com.qqbot.weather
+package com.qqbot.api
 
 import com.alibaba.fastjson.JSONObject
 import com.qqbot.HttpUrl

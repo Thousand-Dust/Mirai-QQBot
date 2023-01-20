@@ -46,7 +46,7 @@ class GroupOwner(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
     }
 
     override fun getMenu(event: GroupMessageEvent): String? {
-        if (!(event.sender.permission.isOwner() || event.sender.id == Info.RootManagerId) || event.group.isBotMuted) {
+        if (!(event.sender.permission.isOwner() || event.sender.id == Info.RootManagerId)) {
             return null
         }
         return "群主系统：\n" +
