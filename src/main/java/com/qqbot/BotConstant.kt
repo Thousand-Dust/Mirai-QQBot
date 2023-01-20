@@ -65,6 +65,11 @@ object HttpUrl {
      * https://dev.qweather.com/docs/api/astronomy/moon-and-moon-phase/
      */
     const val MoonRise = "https://devapi.qweather.com/v7/astronomy/moon"
+
+    /**
+     * 搜狗翻译文本转语音
+     */
+    const val sogouTranslation = "https://fanyi.sogou.com/reventondc/synthesis"
 }
 
 /**
