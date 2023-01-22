@@ -2,7 +2,9 @@ package com.qqbot.ai
 
 import com.qqbot.Utils
 import opennlp.tools.doccat.*
+import opennlp.tools.ml.AbstractEventTrainer
 import opennlp.tools.ml.maxent.GISTrainer
+import opennlp.tools.ml.maxent.quasinewton.QNTrainer
 import opennlp.tools.ml.naivebayes.NaiveBayesTrainer
 import opennlp.tools.ml.perceptron.PerceptronTrainer
 import opennlp.tools.util.ObjectStream
@@ -114,11 +116,10 @@ class TextClassifier(modelPath: String, val dataPaths: Array<String> = arrayOf()
         val sampleStream: ObjectStream<DocumentSample> = DocumentSampleStream(lineStream)
         // 训练文本分类器
         val mlParams = TrainingParameters()
-//        mlParams.put(TrainingParameters.ALGORITHM_PARAM, GISTrainer.MAXENT_VALUE)
+        mlParams.put(TrainingParameters.ALGORITHM_PARAM, GISTrainer.MAXENT_VALUE)
+        mlParams.put(TrainingParameters.TRAINER_TYPE_PARAM, NaiveBayesTrainer.NAIVE_BAYES_VALUE)
         mlParams.put(TrainingParameters.CUTOFF_PARAM, 0)
         mlParams.put(TrainingParameters.ITERATIONS_PARAM, iterations)
-//        mlParams.put(TrainingParameters.THREADS_PARAM, 5)
-//        mlParams.put(TrainingParameters.TRAINER_TYPE_PARAM, NaiveBayesTrainer.NAIVE_BAYES_VALUE)
         val factory = DoccatFactory()
         val model = DocumentCategorizerME.train("zho", sampleStream, mlParams, factory)
         val modelOut: OutputStream = FileOutputStream(outFile)

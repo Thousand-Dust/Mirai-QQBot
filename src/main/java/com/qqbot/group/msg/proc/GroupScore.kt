@@ -199,9 +199,14 @@ class GroupScore(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
             group.sendMessage(At(sender.id) + "今天已经签到过了！")
         } else {
             //判断上次的0点+24小时等于今天的0点
+            var isReset = false
             if (lastZero + TimeMillisecond.DAY == todayZero) {
                 //连续签到
                 memberData.continueSignCount += 1
+                if (memberData.continueSignCount > 7) {
+                    memberData.continueSignCount = 1
+                    isReset = true
+                }
             } else {
                 //非连续签到
                 memberData.continueSignCount = 1
@@ -211,10 +216,12 @@ class GroupScore(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
             val untilScore = min(30 + memberData.continueSignCount * 5, 68)
             //生成随机数为签到的积分
             val randomScore = Random.nextInt(fromScore, untilScore)
-            memberData.score += randomScore
+            memberData.score += randomScore + if (isReset) 20 else 0
             memberData.lastSignTime = now
             database.setMember(memberData)
-            group.sendMessage(At(sender.id) + "签到成功，已连续签到${memberData.continueSignCount}天，获得${randomScore}积分！")
+            group.sendMessage(
+                At(sender.id) + "签到成功，已连续签到${memberData.continueSignCount}天，获得${randomScore}${if (isReset) "+20" else ""}积分！${if (isReset) "\n签到7天，连续签到已重置，额外奖励20积分！" else ""}"
+            )
         }
         return true
     }
@@ -278,14 +285,16 @@ class GroupScore(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
      * 抢劫规则
      */
     private suspend fun robRule(group: Group): Boolean {
-        group.sendMessage("积分抢劫，成功率为45%\n" +
-                "如果成功，抢劫者获得抢劫积分，并被禁言抢劫积分的0.1分钟\n" +
-                "如果失败，被抢劫者扣除抢劫的积分，并被禁言抢劫积分的0.1分钟\n" +
-                "最多可抢劫对方的积分的10%\n" +
-                "抢劫者起码要拥有抢劫积分的3倍\n" +
-                "抢劫者或被抢劫者积分少于200不可抢劫\n" +
-                "抢劫者积分大于被抢劫者的1.5倍，成功率为30%\n" +
-                "对方最近十分钟没有发言不可抢劫")
+        group.sendMessage(
+            "积分抢劫，成功率为45%\n" +
+                    "如果成功，抢劫者获得抢劫积分，并被禁言抢劫积分的0.1分钟\n" +
+                    "如果失败，被抢劫者扣除抢劫的积分，并被禁言抢劫积分的0.1分钟\n" +
+                    "最多可抢劫对方的积分的10%\n" +
+                    "抢劫者起码要拥有抢劫积分的3倍\n" +
+                    "抢劫者或被抢劫者积分少于200不可抢劫\n" +
+                    "抢劫者积分大于被抢劫者的1.5倍，成功率为30%\n" +
+                    "对方最近十分钟没有发言不可抢劫"
+        )
         return true
     }
 
@@ -307,7 +316,8 @@ class GroupScore(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
         sender: Member,
         targetMessage: SingleMessage,
         scoreMessage: SingleMessage,
-        group: Group): Boolean {
+        group: Group
+    ): Boolean {
         val targetId = if (targetMessage is At) targetMessage.target else return false
         //被抢劫对象
         val member = group[targetId]

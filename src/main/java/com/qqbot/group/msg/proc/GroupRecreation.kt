@@ -144,7 +144,7 @@ class GroupRecreation(groupHandler: GroupHandler, database: GroupDatabase) : Gro
                     val splitMsg = msgStr.split(Pattern.compile(" "), 2)
 
                     if (msgStr.startsWith(Command.说.name)) {
-                        say(msgStr.substring(Command.说.name.length).replace(" ", ""), event.group)
+                        say(msgStr.substring(Command.说.name.length), event.group)
                         return true
                     }
                     if (splitMsg.size == 2) {
@@ -192,8 +192,9 @@ class GroupRecreation(groupHandler: GroupHandler, database: GroupDatabase) : Gro
      * 文字转语音
      */
     private suspend fun say(text: String, group: Group) {
-        if (text.isEmpty()) {
-            group.sendMessage("请不要输入空白内容")
+        val isIllegal = text.replace("[^\\u4e00-\\u9fa5a-zA-Z0-9]".toRegex(), "").let { it.isEmpty() || it.length > 128 }
+        if (isIllegal) {
+            group.sendMessage("请不要输入空白或过长内容")
             return
         }
         val file = File(AudioCachePath + text.hashCode() + ".mp3")
