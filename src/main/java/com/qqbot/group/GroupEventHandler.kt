@@ -3,6 +3,7 @@ package com.qqbot.group
 import com.qqbot.Info
 import net.mamoe.mirai.contact.Group
 import net.mamoe.mirai.contact.Member
+import net.mamoe.mirai.event.events.BotGroupPermissionChangeEvent
 import net.mamoe.mirai.event.events.GroupMessageEvent
 import net.mamoe.mirai.event.events.MemberJoinEvent
 import net.mamoe.mirai.event.events.MemberLeaveEvent
@@ -42,6 +43,11 @@ abstract class GroupEventHandler(val myGroup: Group, val my: Member) {
      * 有群员退群时调用
      */
     abstract fun onMemberLeave(event: MemberLeaveEvent)
+
+    /**
+     * 机器人在群的权限变更时调用
+     */
+    abstract fun onMyPermissionChange(event: BotGroupPermissionChangeEvent)
 
     /**
      * 添加事件到缓存

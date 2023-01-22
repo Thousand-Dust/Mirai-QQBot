@@ -31,6 +31,13 @@ abstract class GroupMsgProc(protected val groupHandler: GroupEventHandler, prote
     abstract fun getDesc(): String?
 
     /**
+     * 不需要再接收此群的消息时调用
+     */
+    fun onRemove() {
+        //do nothing
+    }
+
+    /**
      * 显示群消息处理器的功能菜单
      * @return 用户可使用的功能菜单
      */

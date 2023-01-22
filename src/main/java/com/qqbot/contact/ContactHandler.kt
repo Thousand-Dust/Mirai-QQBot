@@ -1,12 +1,10 @@
 package com.qqbot.contact
 
-import com.qqbot.ai.ChatGPTManager
 import kotlinx.coroutines.*
 import net.mamoe.mirai.Bot
 import net.mamoe.mirai.event.events.FriendAddEvent
 import net.mamoe.mirai.event.events.FriendMessageEvent
 import net.mamoe.mirai.event.events.NewFriendRequestEvent
-import net.mamoe.mirai.message.data.PlainText
 import java.util.concurrent.*
 import java.util.concurrent.ThreadPoolExecutor.AbortPolicy
 
@@ -41,7 +39,7 @@ class ContactHandler : ContactEventHandler {
             if (friend.id == myBot.id) {
                 return@runBlocking
             }
-            friend.sendMessage("小冰暂不支持聊天哦")
+//            friend.sendMessage("小冰暂不支持聊天哦")
             /*val singleMessage = friendMessageEvent.message[1]
             if (singleMessage !is PlainText) {
                 friend.sendMessage("不支持的消息类型")

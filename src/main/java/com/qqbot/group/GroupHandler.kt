@@ -6,6 +6,7 @@ import com.qqbot.group.msg.GroupMsgProc
 import com.qqbot.group.msg.proc.*
 import kotlinx.coroutines.*
 import net.mamoe.mirai.contact.*
+import net.mamoe.mirai.event.events.BotGroupPermissionChangeEvent
 import net.mamoe.mirai.event.events.GroupMessageEvent
 import net.mamoe.mirai.event.events.MemberJoinEvent
 import net.mamoe.mirai.event.events.MemberLeaveEvent
@@ -30,31 +31,25 @@ class GroupHandler(myGroup: Group, my: Member) : GroupEventHandler(myGroup, my) 
     private var lastKickTime = 0L
 
     override fun onCreate(): Boolean {
-        //初始化群消息处理器
-        val groupMaster = GroupMaster(this, database)
-        val groupOwner = GroupOwner(this, database)
-        val groupManager = GroupManager(this, database)
-        val groupCheck = GroupCheck(this, database)
-        val groupScore = GroupScore(this, database)
-        val groupRecreation = GroupRecreation(this, database)
-
         //机器人在群里没有管理员权限，只监听群消息检测系统
         if (myGroup.botPermission < MemberPermission.ADMINISTRATOR) {
-            msgProcList.add(groupCheck)
+            msgProcList.add(GroupCheck(this, database))
             return true
         }
 
         //按顺序添加消息处理器
-        msgProcList.add(groupMaster)
-        msgProcList.add(groupOwner)
-        msgProcList.add(groupManager)
-        msgProcList.add(groupCheck)
-        msgProcList.add(groupScore)
-        msgProcList.add(groupRecreation)
+        msgProcList.add(GroupMaster(this, database))
+        msgProcList.add(GroupOwner(this, database))
+        msgProcList.add(GroupManager(this, database))
+        msgProcList.add(GroupCheck(this, database))
+        msgProcList.add(GroupScore(this, database))
+        msgProcList.add(GroupRecreation(this, database))
         return true
     }
 
     override fun onRemove() {
+        //逐一调用消息处理器的onRemove方法
+        msgProcList.forEach { it.onRemove() }
         database.close()
     }
 
@@ -131,9 +126,10 @@ class GroupHandler(myGroup: Group, my: Member) : GroupEventHandler(myGroup, my) 
         }
     }
 
+    @Synchronized
     override fun onMemberLeave(event: MemberLeaveEvent) {
         val currentTime = System.currentTimeMillis()
-        if (myGroup.botPermission < MemberPermission.ADMINISTRATOR || currentTime - lastKickTime < TimeMillisecond.SECOND * 10) {
+        if (myGroup.botPermission < MemberPermission.ADMINISTRATOR || currentTime - lastKickTime < TimeMillisecond.SECOND * 20) {
             return
         }
         runBlocking {
@@ -146,6 +142,13 @@ class GroupHandler(myGroup: Group, my: Member) : GroupEventHandler(myGroup, my) 
                 event.group.sendMessage(At(event.member.id) + "被" + event.operator!!.nameCardOrNick + " 踢出了群聊")
                 return@runBlocking
             }
+        }
+    }
+
+    override fun onMyPermissionChange(event: BotGroupPermissionChangeEvent) {
+        if (!event.origin.isOperator() && event.new.isOperator()) {
+            msgProcList.clear()
+            onCreate()
         }
     }
 
