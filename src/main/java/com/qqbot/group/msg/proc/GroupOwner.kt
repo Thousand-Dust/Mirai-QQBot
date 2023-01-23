@@ -101,7 +101,6 @@ class GroupOwner(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
             group.sendMessage("当前群没有群管")
             return
         }
-        val message = StringBuilder("群管列表：\n")
         //找出重复的名字
         val repeatNameList = ArrayList<String>(10)
         for (i in managerList.indices) {
@@ -111,17 +110,19 @@ class GroupOwner(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
                 }
             }
         }
-        for (manager in managerList) {
-            message.append(manager.name)
-            //名字重复则显示QQ号
-            if (repeatNameList.contains(manager.name)) {
-                message.append("(").append(manager.id).append(")")
+        val message = buildString {
+            for (manager in managerList) {
+                append(manager.name)
+                //名字重复则显示QQ号
+                if (repeatNameList.contains(manager.name)) {
+                    append("(").append(manager.id).append(")")
+                }
+                append("\n")
             }
-            message.append("\n")
+            //删除最后一个换行符
+            deleteCharAt(lastIndex)
         }
-        //删除最后一个换行符
-        message.deleteCharAt(message.lastIndex)
-        group.sendMessage(message.toString())
+        group.sendMessage(message)
     }
 
     /**

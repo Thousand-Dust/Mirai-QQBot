@@ -9,6 +9,7 @@ import com.qqbot.group.msg.GroupMsgProc
 import net.mamoe.mirai.contact.Group
 import net.mamoe.mirai.contact.Member
 import net.mamoe.mirai.contact.isOperator
+import net.mamoe.mirai.contact.nameCardOrNick
 import net.mamoe.mirai.event.events.GroupMessageEvent
 import net.mamoe.mirai.message.data.*
 import net.mamoe.mirai.message.data.MessageSource.Key.recall
@@ -31,7 +32,6 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabase) : G
         ban,
         解禁,
         kj,
-        全部解禁,
         撤回,
         撤回关键词,
         封印,
@@ -39,6 +39,8 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabase) : G
         查询消息记录,
         开启全员禁言,
         关闭全员禁言,
+        禁言列表,
+        全部解禁,
     }
 
     //封印列表
@@ -90,6 +92,7 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabase) : G
                 "查询消息记录：" + Command.查询消息记录 + "@目标+查询数量(默认5)\n" +
                 "全员禁言：" + Command.开启全员禁言 + "\n" +
                 "关闭全员禁言：" + Command.关闭全员禁言 + "\n" +
+                "查看被禁言群员列表：" + Command.禁言列表 + "\n" +
                 "解除所有群员的禁言：" + Command.全部解禁 + "\n" +
                 "其他功能待更新..."
     }
@@ -121,8 +124,13 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabase) : G
                 Command.关闭全员禁言.name -> {
                     return unmuteAll(event.group)
                 }
+                Command.禁言列表.name -> {
+                    memberMuteList(event.group)
+                    return true
+                }
                 Command.全部解禁.name -> {
-                    return memberUnmuteAll(event.group)
+                    memberUnmuteAll(event.group)
+                    return true
                 }
                 else -> {
                     val comMsgStr = command.toString()
@@ -378,7 +386,7 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabase) : G
         for (i in cacheLastIndex() downTo 0) {
             val event = getCache(i)
             if (event.sender.id == targetId) {
-                forwardMessage.add(event)
+                forwardMessage.add(event.sender, event.message, event.time)
                 index++
                 if (index >= count) {
                     break
@@ -410,9 +418,54 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabase) : G
     }
 
     /**
+     * 查看被禁言群员列表
+     */
+    private suspend fun memberMuteList(group: Group) {
+        val muteList = group.members.filter { it.isMuted }
+        //找出重复的名字
+        val repeatNameList = ArrayList<String>(10)
+        for (i in muteList.indices) {
+            for (j in i + 1 until muteList.size) {
+                if (muteList[i].nameCardOrNick == muteList[j].nameCardOrNick) {
+                    repeatNameList.add(muteList[i].nameCardOrNick)
+                }
+            }
+        }
+        val message = buildString {
+            append("被禁言群员列表：\n")
+            for (member in muteList) {
+                //剩余禁言时间
+                val muteTime = member.muteTimeRemaining
+                val muteStr = buildString {
+                    //将目标被禁言时间格式化为 时:分:秒
+                    val hour = muteTime / 3600
+                    val minute = muteTime % 3600 / 60
+                    if (hour != 0) {
+                        append(hour).append("小时")
+                    }
+                    if (minute != 0) {
+                        append(minute).append("分")
+                    }
+                }
+                append(member.nameCardOrNick)
+                //名字重复则显示QQ号
+                if (repeatNameList.contains(member.nameCardOrNick)) {
+                    append("(").append(member.id).append(")")
+                }
+                append(": ")
+                append(muteStr)
+                append("\n")
+            }
+            //删除最后一个换行符
+            deleteCharAt(lastIndex)
+        }
+        group.sendMessage(message)
+    }
+
+    /**
      * 解除所有群员的禁言
      */
-    private suspend fun memberUnmuteAll(group: Group): Boolean {
+    private suspend fun memberUnmuteAll(group: Group) {
         group.members.filter { it.isMuted }.let {
             if (it.isEmpty()) {
                 group.sendMessage("没有群员被禁言")
@@ -423,7 +476,6 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabase) : G
             }
             group.sendMessage("已解除所有群员的禁言")
         }
-        return true
     }
 
     /**

@@ -54,3 +54,25 @@ suspend fun checkPermission(database: GroupDatabase, group: Group, target: Membe
     }
     return true
 }
+
+/**
+ * 将时间格式化
+ * @param time 时间（毫秒）
+ */
+/*
+fun timeFormat(time: Long) {
+    //将目标被禁言时间格式化为 时:分:秒
+    val hour = time / 3600
+    val minute = time % 3600 / 60
+    val second = time % 60
+    val stringBuilder = StringBuilder()
+    if (hour != 0) {
+        stringBuilder.append(hour).append("小时")
+    }
+    if (minute != 0) {
+        stringBuilder.append(minute).append("分钟")
+    }
+    if (second != 0) {
+        stringBuilder.append(second).append("秒")
+    }
+}*/
