@@ -1,5 +1,6 @@
 package com.qqbot.group
 
+import com.qqbot.TimeMillisecond
 import com.qqbot.database.group.GroupDatabase
 import com.qqbot.database.group.MemberData
 import net.mamoe.mirai.contact.*
@@ -15,7 +16,13 @@ import net.mamoe.mirai.contact.*
  * @param isSendMsg 权限不足是否发送消息
  * @return 机器人是否有权限可以执行操作
  */
-suspend fun checkPermission(database: GroupDatabase, group: Group, target: Member, sender: Member? = null, isSendMsg: Boolean = true): Boolean {
+suspend fun checkPermission(
+    database: GroupDatabase,
+    group: Group,
+    target: Member,
+    sender: Member? = null,
+    isSendMsg: Boolean = true
+): Boolean {
     if (!group.botPermission.isOperator()) {
         if (isSendMsg) {
             group.sendMessage("机器人权限不足！")
@@ -54,25 +61,3 @@ suspend fun checkPermission(database: GroupDatabase, group: Group, target: Membe
     }
     return true
 }
-
-/**
- * 将时间格式化
- * @param time 时间（毫秒）
- */
-/*
-fun timeFormat(time: Long) {
-    //将目标被禁言时间格式化为 时:分:秒
-    val hour = time / 3600
-    val minute = time % 3600 / 60
-    val second = time % 60
-    val stringBuilder = StringBuilder()
-    if (hour != 0) {
-        stringBuilder.append(hour).append("小时")
-    }
-    if (minute != 0) {
-        stringBuilder.append(minute).append("分钟")
-    }
-    if (second != 0) {
-        stringBuilder.append(second).append("秒")
-    }
-}*/

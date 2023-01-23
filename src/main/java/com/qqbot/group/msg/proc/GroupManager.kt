@@ -2,10 +2,12 @@ package com.qqbot.group.msg.proc
 
 import com.qqbot.group.GroupPermission.isOperator
 import com.qqbot.Info
+import com.qqbot.TimeMillisecond
 import com.qqbot.database.group.GroupDatabase
 import com.qqbot.group.GroupEventHandler
 import com.qqbot.group.checkPermission
 import com.qqbot.group.msg.GroupMsgProc
+import com.qqbot.timeFormat
 import net.mamoe.mirai.contact.Group
 import net.mamoe.mirai.contact.Member
 import net.mamoe.mirai.contact.isOperator
@@ -23,7 +25,6 @@ import kotlin.math.min
 class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabase) : GroupMsgProc(groupHandler, database) {
 
     private enum class Command {
-        群管系统,
         踢,
         t,
         踢黑,
@@ -36,6 +37,7 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabase) : G
         撤回关键词,
         封印,
         解除封印,
+        封印列表,
         查询消息记录,
         开启全员禁言,
         关闭全员禁言,
@@ -80,7 +82,7 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabase) : G
             return null
         }
 
-        return "管理员操作：\n" +
+        return "群管系统：\n" +
                 "踢出群聊：${Command.踢}/${Command.t}+@目标\n" +
                 "踢出并拉黑：${Command.踢黑}/${Command.tb}+@目标\n" +
                 "禁言：${Command.禁言}/${Command.ban}+@目标+时间和单位(默认10m) (s秒,m分钟,h小时,d天)\n" +
@@ -89,12 +91,12 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabase) : G
                 "撤回关键词：" + Command.撤回关键词 + "+关键词\n" +
                 "封印：" + Command.封印 + "+@目标+封印层数\n" +
                 "解除封印：" + Command.解除封印 + "+@目标\n" +
+                "查看封印列表：" + Command.封印列表 + "\n" +
                 "查询消息记录：" + Command.查询消息记录 + "@目标+查询数量(默认5)\n" +
                 "全员禁言：" + Command.开启全员禁言 + "\n" +
                 "关闭全员禁言：" + Command.关闭全员禁言 + "\n" +
                 "查看被禁言群员列表：" + Command.禁言列表 + "\n" +
-                "解除所有群员的禁言：" + Command.全部解禁 + "\n" +
-                "其他功能待更新..."
+                "解除所有群员的禁言：" + Command.全部解禁 + "\n"
     }
 
     /**
@@ -118,6 +120,9 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabase) : G
         //识别命令
         if (message.size == 2) {
             when (command.toString()) {
+                Command.封印列表.name -> {
+                    return sealList(event.group)
+                }
                 Command.开启全员禁言.name -> {
                     return muteAll(event.group)
                 }
@@ -125,12 +130,10 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabase) : G
                     return unmuteAll(event.group)
                 }
                 Command.禁言列表.name -> {
-                    memberMuteList(event.group)
-                    return true
+                    return memberMuteList(event.group)
                 }
                 Command.全部解禁.name -> {
-                    memberUnmuteAll(event.group)
-                    return true
+                    return memberUnmuteAll(event.group)
                 }
                 else -> {
                     val comMsgStr = command.toString()
@@ -352,7 +355,7 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabase) : G
     }
 
     /**
-     * 封印群员（群员封印状态下发消息会直接被撤回）
+     * 解除群员封印
      */
     private suspend fun unseal(targetMessage: SingleMessage, group: Group): Boolean {
         val targetId = if (targetMessage is At) targetMessage.target else return false
@@ -361,6 +364,40 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabase) : G
             group.sendMessage("已解除封印")
         }
 
+        return true
+    }
+
+    /**
+     * 查看封印列表
+     */
+    private suspend fun sealList(group: Group): Boolean {
+        if (sealMap.isEmpty()) {
+            group.sendMessage("封印列表为空")
+            return true
+        }
+        //找出重复的名字
+        val repeatNameList = ArrayList<String>(10)
+        for (i in sealMap) {
+            val name = group[i.key]?.nameCardOrNick ?: "已退群成员"
+            //从sealMap查找是否有重复的名字
+            for (j in sealMap) {
+                if (i.key == j.key) continue
+                if (name == (group[j.key]?.nameCardOrNick ?: "已退群成员")) {
+                    repeatNameList.add(name)
+                    break
+                }
+            }
+        }
+        val builder = StringBuilder()
+        for ((key, value) in sealMap) {
+            val nameOrNick = group[key]?.nameCardOrNick ?: "已退群成员"
+            builder.append(nameOrNick)
+            if (repeatNameList.contains(nameOrNick)) {
+                builder.append("(").append(key).append(")")
+            }
+            builder.append("：").append(value).append("条\n")
+        }
+        group.sendMessage(builder.toString())
         return true
     }
 
@@ -386,7 +423,7 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabase) : G
         for (i in cacheLastIndex() downTo 0) {
             val event = getCache(i)
             if (event.sender.id == targetId) {
-                forwardMessage.add(event.sender, event.message, event.time)
+                forwardMessage.add(event.sender.id, event.senderName, event.message, event.time)
                 index++
                 if (index >= count) {
                     break
@@ -420,52 +457,45 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabase) : G
     /**
      * 查看被禁言群员列表
      */
-    private suspend fun memberMuteList(group: Group) {
+    private suspend fun memberMuteList(group: Group): Boolean {
         val muteList = group.members.filter { it.isMuted }
+        if (muteList.isEmpty()) {
+            group.sendMessage("当前没有被禁言的群员")
+            return true
+        }
         //找出重复的名字
         val repeatNameList = ArrayList<String>(10)
         for (i in muteList.indices) {
+            val nameCardOrNick = muteList[i].nameCardOrNick
             for (j in i + 1 until muteList.size) {
-                if (muteList[i].nameCardOrNick == muteList[j].nameCardOrNick) {
-                    repeatNameList.add(muteList[i].nameCardOrNick)
+                if (nameCardOrNick == muteList[j].nameCardOrNick) {
+                    repeatNameList.add(nameCardOrNick)
                 }
             }
         }
         val message = buildString {
             append("被禁言群员列表：\n")
             for (member in muteList) {
-                //剩余禁言时间
-                val muteTime = member.muteTimeRemaining
-                val muteStr = buildString {
-                    //将目标被禁言时间格式化为 时:分:秒
-                    val hour = muteTime / 3600
-                    val minute = muteTime % 3600 / 60
-                    if (hour != 0) {
-                        append(hour).append("小时")
-                    }
-                    if (minute != 0) {
-                        append(minute).append("分")
-                    }
-                }
                 append(member.nameCardOrNick)
                 //名字重复则显示QQ号
                 if (repeatNameList.contains(member.nameCardOrNick)) {
                     append("(").append(member.id).append(")")
                 }
                 append(": ")
-                append(muteStr)
+                append(timeFormat(member.muteTimeRemaining * TimeMillisecond.SECOND))
                 append("\n")
             }
             //删除最后一个换行符
             deleteCharAt(lastIndex)
         }
         group.sendMessage(message)
+        return true
     }
 
     /**
      * 解除所有群员的禁言
      */
-    private suspend fun memberUnmuteAll(group: Group) {
+    private suspend fun memberUnmuteAll(group: Group): Boolean {
         group.members.filter { it.isMuted }.let {
             if (it.isEmpty()) {
                 group.sendMessage("没有群员被禁言")
@@ -476,6 +506,7 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabase) : G
             }
             group.sendMessage("已解除所有群员的禁言")
         }
+        return true
     }
 
     /**
