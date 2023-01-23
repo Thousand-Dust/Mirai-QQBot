@@ -104,9 +104,10 @@ class GroupOwner(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
         //找出重复的名字
         val repeatNameList = ArrayList<String>(10)
         for (i in managerList.indices) {
+            val name = managerList[i].name
             for (j in i + 1 until managerList.size) {
-                if (managerList[i].name == managerList[j].name) {
-                    repeatNameList.add(managerList[i].name)
+                if (name == managerList[j].name) {
+                    repeatNameList.add(name)
                 }
             }
         }

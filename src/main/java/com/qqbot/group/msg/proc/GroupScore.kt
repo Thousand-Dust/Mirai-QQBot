@@ -1,9 +1,6 @@
 package com.qqbot.group.msg.proc
 
-import com.qqbot.Info
-import com.qqbot.TimeMillisecond
-import com.qqbot.TimeSecond
-import com.qqbot.Utils
+import com.qqbot.*
 import com.qqbot.database.group.GroupDatabase
 import com.qqbot.database.group.MemberData
 import com.qqbot.group.GroupEventHandler
@@ -401,9 +398,10 @@ class GroupScore(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
             //找出重复的名字
             val repeatNameList = ArrayList<String>(10)
             for (i in memberDataList.indices) {
+                val name = memberDataList[i].name
                 for (j in i + 1 until memberDataList.size) {
-                    if (memberDataList[i].name == memberDataList[j].name) {
-                        repeatNameList.add(memberDataList[i].name)
+                    if (name == memberDataList[j].name) {
+                        repeatNameList.add(name)
                     }
                 }
             }
@@ -543,21 +541,7 @@ class GroupScore(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
         val senderData = database.getMember(sender.id)
         //判断积分是否足够
         if (senderData == null || senderData.score < score) {
-            //将目标被禁言时间格式化为 时:分:秒
-            val hour = muteTime / 3600
-            val minute = muteTime % 3600 / 60
-            val second = muteTime % 60
-            val stringBuilder = StringBuilder()
-            if (hour != 0) {
-                stringBuilder.append(hour).append("小时")
-            }
-            if (minute != 0) {
-                stringBuilder.append(minute).append("分")
-            }
-            if (second != 0) {
-                stringBuilder.append(second).append("秒")
-            }
-            group.sendMessage("对方被禁言时间剩余：${stringBuilder}，需要消耗积分：${score}。积分不足")
+            group.sendMessage("对方被禁言时间剩余：${timeFormat(muteTime * TimeMillisecond.SECOND)}，需要消耗积分：${score}。积分不足")
             return true
         }
         //禁言

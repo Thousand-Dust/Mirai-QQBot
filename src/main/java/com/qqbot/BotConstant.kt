@@ -97,3 +97,72 @@ object TimeSecond {
     const val MONTH = 30 * DAY
     const val YEAR = 365 * DAY
 }
+
+/**
+ * 将时间格式化为 天:时:分:秒:毫秒
+ * @param time 时间（毫秒）
+ * @param isShowDay 是否显示天
+ * @param isShowHour 是否显示小时
+ * @param isShowMinute 是否显示分钟
+ * @param isShowSecond 是否显示秒
+ * @param isShowMillisecond 是否显示毫秒
+ * @return 格式化后的时间
+ */
+fun timeFormat(
+    time: Long,
+    isShowDay: Boolean = true,
+    isShowHour: Boolean = true,
+    isShowMinute: Boolean = true,
+    isShowSecond: Boolean = true,
+    isShowMillisecond: Boolean = true
+): String {
+    //各单位剩余的时间
+    val day = time / TimeMillisecond.DAY
+    val hour = time % TimeMillisecond.DAY / TimeMillisecond.HOUR
+    val minute = time % TimeMillisecond.HOUR / TimeMillisecond.MINUTE
+    val second = time % TimeMillisecond.MINUTE / TimeMillisecond.SECOND
+    val millisecond = time % TimeMillisecond.SECOND
+
+    //是否显示各单位，如果自身不等于0，或者比自身大的单位显示，并且比自身小的单位也显示，则自身也显示
+    val isShowDay1 = isShowDay && day != 0L
+    val isShowHour1 = isShowHour && hour != 0L || run {
+        isShowDay1 && run {
+            isShowMinute && minute != 0L || run {
+                isShowSecond && second != 0L || run {
+                    isShowMillisecond && millisecond != 0L
+                }
+            }
+        }
+    }
+    val isShowMinute1 = isShowMinute && minute != 0L || run {
+        isShowHour1 && run {
+            isShowSecond && second != 0L || run {
+                isShowMillisecond && millisecond != 0L
+            }
+        }
+    }
+    val isShowSecond1 = isShowSecond && second != 0L || run {
+        isShowMinute1 && run {
+            isShowMillisecond && millisecond != 0L
+        }
+    }
+    val isShowMillisecond1 = isShowMillisecond && millisecond != 0L
+    val result = buildString {
+        if (isShowDay1) {
+            append(day).append("天")
+        }
+        if (isShowHour1) {
+            append(hour).append("小时")
+        }
+        if (isShowMinute1) {
+            append(minute).append("分钟")
+        }
+        if (isShowSecond1) {
+            append(second).append("秒")
+        }
+        if (isShowMillisecond1) {
+            append(millisecond).append("毫秒")
+        }
+    }
+    return result
+}
