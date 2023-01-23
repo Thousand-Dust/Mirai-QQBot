@@ -212,8 +212,8 @@ class GroupScore(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
                 memberData.continueSignCount = 1
             }
             //连续签到奖励
-            val fromScore = min(7 + memberData.continueSignCount * 3, 38)
-            val untilScore = min(30 + memberData.continueSignCount * 5, 68)
+            val fromScore = min(7 + memberData.continueSignCount * 6, 37)
+            val untilScore = min(30 + memberData.continueSignCount * 5, 65)
             //生成随机数为签到的积分
             val randomScore = Random.nextInt(fromScore, untilScore)
             memberData.score += randomScore + if (isReset) 20 else 0
@@ -552,7 +552,7 @@ class GroupScore(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
                 stringBuilder.append(hour).append("小时")
             }
             if (minute != 0) {
-                stringBuilder.append(minute).append("分钟")
+                stringBuilder.append(minute).append("分")
             }
             if (second != 0) {
                 stringBuilder.append(second).append("秒")
