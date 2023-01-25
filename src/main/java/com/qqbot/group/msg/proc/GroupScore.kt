@@ -11,10 +11,7 @@ import net.mamoe.mirai.contact.Member
 import net.mamoe.mirai.contact.isBotMuted
 import net.mamoe.mirai.contact.nameCardOrNick
 import net.mamoe.mirai.event.events.GroupMessageEvent
-import net.mamoe.mirai.message.data.At
-import net.mamoe.mirai.message.data.PlainText
-import net.mamoe.mirai.message.data.SingleMessage
-import net.mamoe.mirai.message.data.sourceOrNull
+import net.mamoe.mirai.message.data.*
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.math.max
@@ -200,8 +197,7 @@ class GroupScore(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
             if (lastZero + TimeMillisecond.DAY == todayZero) {
                 //连续签到
                 memberData.continueSignCount += 1
-                if (memberData.continueSignCount > 7) {
-                    memberData.continueSignCount = 1
+                if (memberData.continueSignCount >= 7) {
                     isReset = true
                 }
             } else {
@@ -209,16 +205,19 @@ class GroupScore(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
                 memberData.continueSignCount = 1
             }
             //连续签到奖励
-            val fromScore = min(7 + memberData.continueSignCount * 6, 37)
+            val fromScore = min(7 + memberData.continueSignCount * 5, 37)
             val untilScore = min(30 + memberData.continueSignCount * 5, 65)
             //生成随机数为签到的积分
             val randomScore = Random.nextInt(fromScore, untilScore)
-            memberData.score += randomScore + if (isReset) 20 else 0
+            memberData.score += randomScore
             memberData.lastSignTime = now
+            val msg = At(sender.id) + "签到成功，已连续签到${memberData.continueSignCount}天，获得${randomScore}${if (isReset) "+20" else ""}积分！${if (isReset) "\n签到7天，连续签到已重置，额外奖励20积分！" else ""}"
+            if (isReset) {
+                memberData.continueSignCount = 0
+                memberData.score += 20
+            }
             database.setMember(memberData)
-            group.sendMessage(
-                At(sender.id) + "签到成功，已连续签到${memberData.continueSignCount}天，获得${randomScore}${if (isReset) "+20" else ""}积分！${if (isReset) "\n签到7天，连续签到已重置，额外奖励20积分！" else ""}"
-            )
+            group.sendMessage(msg)
         }
         return true
     }

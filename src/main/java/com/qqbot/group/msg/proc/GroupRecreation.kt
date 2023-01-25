@@ -118,10 +118,10 @@ class GroupRecreation(groupHandler: GroupHandler, database: GroupDatabase) : Gro
         return "娱乐系统：\n" +
                 "${Command.摸鱼人日历}\n" +
                 "文字转语音：${Command.说}+文字\n" +
-                "\n生活与日常系统：\n" +
+                "\n天气系统：\n" +
                 "----------\n以下的(位置)可为：(省/市/区)级行政区，支持查询大多数国家。可模糊搜索指定上级行政区，用(空格)隔开（北京 朝阳）。注意：以下示例中的空格也需要输入\n----------\n" +
                 "查询实时天气：${Command.实时天气} 位置\n" +
-                "查询3天内天气：${Command.未来天气} 第几天(1/2/3) 位置\n" +
+                "查询未来天气：${Command.未来天气} 第几天(1~7) 位置\n" +
                 "查询天气指数：${Command.天气指数} 位置\n" +
                 "查询日出日落：${Command.日出日落} 第几天 位置\n" +
                 "查询月升月落：${Command.月升月落} 第几天 位置\n" +
@@ -293,15 +293,24 @@ class GroupRecreation(groupHandler: GroupHandler, database: GroupDatabase) : Gro
     }
 
     /**
-     * 查询3日天气
+     * 查询未来7日天气
      */
     private suspend fun threeDayWeather(message: String, group: Group) {
         val splitMsg = message.split(Pattern.compile(" "), 2)
-        if (splitMsg.size != 2 || splitMsg[0] !in listOf("1", "2", "3")) {
-            group.sendMessage("格式错误，正确格式：${Command.未来天气} (1/2/3) 城市")
+        if (splitMsg.size != 2) {
+            group.sendMessage("格式错误，正确格式：${Command.未来天气} (1~7) 城市")
             return
         }
-        val dayNum = splitMsg[0].toInt()
+        val dayNum = try {
+            splitMsg[0].toInt()
+        } catch (e: Exception) {
+            group.sendMessage("时间格式错误，请输入1~7的数字")
+            return
+        }
+        if (dayNum !in 1..7) {
+            group.sendMessage("只能查询1~7天内的天气")
+            return
+        }
         val city = getCity(splitMsg[1], group) ?: return
         val weatherJson = weather.threeDayWeather(city.id)
         if (weatherJson == null) {
@@ -315,7 +324,7 @@ class GroupRecreation(groupHandler: GroupHandler, database: GroupDatabase) : Gro
         }
         val daily = weatherJson.getJSONArray("daily").getJSONObject(dayNum - 1)
         val str = StringBuilder().apply {
-            append("${city.name}三日天气\n")
+            append("${city.name}未来7日天气\n")
             append("${daily.getString("fxDate")}\n")
             append("温度：${daily.getString("tempMin")}° ~ ${daily.getString("tempMax")}°\n")
             append("白天天气：${daily.getString("textDay")}\n")

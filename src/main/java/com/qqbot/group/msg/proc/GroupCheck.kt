@@ -20,7 +20,6 @@ import net.mamoe.mirai.message.data.MessageSource.Key.recall
 import net.mamoe.mirai.message.data.PlainText
 import net.mamoe.mirai.message.data.time
 import java.util.stream.Collectors
-import kotlin.math.max
 
 /**
  * 群消息检测系统
@@ -68,17 +67,15 @@ class GroupCheck(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
         val msgStr1 = msgStr.replace(" ", "")
         if (msgStr.length > 128 || msgStr1.isEmpty()) return false
 
-        val senderId = event.sender.id
-
         val label = textClassifier.categorize(msgStr)
         if (!myGroup.botPermission.isOperator()) {
             return false
         }
         when (label) {
             "脏话" -> {
-                if (!checkPermission(database, event.group, event.sender, isSendMsg = false)) {
-//                  event.message.recall()
-                }
+                /*if (!checkPermission(database, event.group, event.sender, isSendMsg = false)) {
+                  event.message.recall()
+                }*/
                 event.group.sendMessage(At(event.sender) + " 请注意言辞！code: 001")
                 return true
             }
