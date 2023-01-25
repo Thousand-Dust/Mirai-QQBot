@@ -112,6 +112,7 @@ class GroupOwner(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
             }
         }
         val message = buildString {
+            append("群管列表：\n")
             for (manager in managerList) {
                 append(manager.name)
                 //名字重复则显示QQ号

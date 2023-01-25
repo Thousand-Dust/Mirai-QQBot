@@ -46,7 +46,7 @@ suspend fun checkPermission(
             }
             return false
         }
-        if (targetData.permission != 0 && senderData.permission != 0 && targetData.permission > senderData.permission) {
+        if (targetData.permission != 0 && senderData.permission != 0 && senderData.permission <= targetData.permission) {
             if (isSendMsg) {
                 group.sendMessage("操作者权限不足")
             }

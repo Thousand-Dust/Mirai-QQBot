@@ -263,7 +263,8 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabase) : G
             return false
         }
         //检查权限
-        if (!my.isOperator()) {
+        if (my.permission.level <= sender.permission.level) {
+            group.sendMessage("机器人权限不足")
             return false
         }
         target.unmute()
@@ -397,6 +398,7 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabase) : G
             }
             builder.append("：").append(value).append("条\n")
         }
+        builder.deleteCharAt(builder.lastIndex)
         group.sendMessage(builder.toString())
         return true
     }
@@ -423,7 +425,7 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabase) : G
         for (i in cacheLastIndex() downTo 0) {
             val event = getCache(i)
             if (event.sender.id == targetId) {
-                forwardMessage.add(event.sender.id, event.senderName, event.message, event.time)
+                forwardMessage.add(event)
                 index++
                 if (index >= count) {
                     break
