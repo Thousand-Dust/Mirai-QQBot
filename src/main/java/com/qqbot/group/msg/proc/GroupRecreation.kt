@@ -102,6 +102,19 @@ class GroupRecreation(groupHandler: GroupHandler, database: GroupDatabase) : Gro
         override fun toString() = "$name($id)"
     }
 
+    init {
+        //创建temp文件夹
+        val tempFile = File("temp")
+        if (!tempFile.exists()) {
+            tempFile.mkdir()
+        }
+        //创建语音文件缓存文件夹
+        val audioCacheFile = File(AudioCachePath)
+        if (!audioCacheFile.exists()) {
+            audioCacheFile.mkdir()
+        }
+    }
+
     override suspend fun process(event: GroupMessageEvent): Boolean {
         return command(event)
     }

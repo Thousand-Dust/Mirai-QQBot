@@ -185,11 +185,11 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabase) : G
         val target = group[targetId]
         if (target == null) {
             group.sendMessage("找不到该成员")
-            return false
+            return true
         }
         //检查权限
         if (!checkPermission(database, group, target, sender)) {
-            return false
+            return true
         }
         target.kick("", block)
         group.sendMessage(if (block) "成功踢出并拉黑" else "踢出成功")
@@ -206,14 +206,14 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabase) : G
         val target = group[targetId]
         if (target == null) {
             group.sendMessage("找不到该成员")
-            return false
+            return true
         }
         if (timeMessage !is PlainText) {
             return false
         }
         //检查权限
         if (!checkPermission(database, group, target, sender)) {
-            return false
+            return true
         }
         val timeMessageStr = timeMessage.toString().lowercase(Locale.getDefault()).replace(" ", "")
 
@@ -260,12 +260,12 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabase) : G
         val target = group[targetId]
         if (target == null) {
             group.sendMessage("找不到该成员")
-            return false
+            return true
         }
         //检查权限
-        if (my.permission.level <= sender.permission.level) {
+        if (my.permission.level <= target.permission.level) {
             group.sendMessage("机器人权限不足")
-            return false
+            return true
         }
         target.unmute()
         group.sendMessage("已解除禁言")
@@ -288,7 +288,7 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabase) : G
         group[targetId]?.let {
             //检查权限
             if (!checkPermission(database, group, it, sender)) {
-                return false
+                return true
             }
         }
         //撤回消息的数量
@@ -346,7 +346,7 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabase) : G
         }
         //检查权限
         if (!checkPermission(database, group, target, sender)) {
-            return false
+            return true
         }
         sealMap[target.id] = countMessage.toString().replace(" ", "").toInt()
 

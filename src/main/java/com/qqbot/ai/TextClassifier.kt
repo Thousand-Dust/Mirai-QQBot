@@ -37,7 +37,7 @@ class TextClassifier(modelPath: String, val dataPaths: Array<String> = arrayOf()
     fun categorize(text: String): String {
         val formatText = participle(text)
         if (formatText.isEmpty()) {
-            return "无意义"
+            return "其他"
         }
         val probs = classifier.categorize(formatText.split(" ").toTypedArray())
         //获取probs中最大的概率值的索引
@@ -50,13 +50,13 @@ class TextClassifier(modelPath: String, val dataPaths: Array<String> = arrayOf()
             for (probIndex in probs.indices) {
                 val prob = probs[probIndex]
                 if (probIndex != maxProbIndex && prob * 2 >= maxProb) {
-                    label = "其他"
+                    label = "未知"
                     break
                 }
             }
         }
         //保存结果用于调整模型
-//        saveData(label, formatText)
+        saveData(label, formatText)
         return label
     }
 
