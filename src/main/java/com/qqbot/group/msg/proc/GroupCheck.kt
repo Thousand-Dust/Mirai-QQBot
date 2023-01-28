@@ -168,8 +168,11 @@ class GroupCheck(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
         //checkedMsgRecord列表最后 [Info.CHECK_EVENT_COUNT_MAX1] 条记录为重复内容，判断为刷屏
         if (checkedMsgRecord.count() >= Info.CHECK_EVENT_COUNT_MAX1) {
             for (i in checkedMsgRecord.count() - 1 downTo checkedMsgRecord.count() - Info.CHECK_EVENT_COUNT_MAX1) {
-                if (lastTime - checkedMsgRecord[i].message.time > TimeSecond.HOUR || !Utils.messageChainEqual(message, checkedMsgRecord[i].message))
-                {
+                if (lastTime - checkedMsgRecord[i].message.time > TimeSecond.HOUR || !Utils.messageChainEqual(
+                        message,
+                        checkedMsgRecord[i].message
+                    )
+                ) {
                     return false
                 }
             }
@@ -248,6 +251,32 @@ class GroupCheck(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
             stringBuilder.append(minute).append("分钟")
         }
         group.sendMessage("禁止刷屏，关小黑屋$stringBuilder")
+    }
+
+    /**
+     * 检测复读
+     * 检测是否重复发送相同消息3条及以上
+     */
+    private suspend fun repeatMessage(event: GroupMessageEvent): Boolean {
+        val message = event.message
+        //获取上3条消息，判断是否重复
+        val cacheSize = cacheSize()
+        if (cacheSize < 3) {
+            return false
+        }
+        var count = 0
+        for (i in cacheSize - 1 downTo cacheSize - 4) {
+            if (Utils.messageChainEqual(message, getCache(i).message)) {
+                count++
+            }
+        }
+        if (count >= 3) {
+            event.message.recall()
+            val at = At(event.sender.id)
+            event.group.sendMessage(at + " 禁止复读")
+            return true
+        }
+        return false
     }
 
 }

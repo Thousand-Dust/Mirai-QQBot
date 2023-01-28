@@ -138,7 +138,8 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabase) : G
                 else -> {
                     val comMsgStr = command.toString()
                     if (comMsgStr.startsWith(Command.撤回关键词.name)) {
-                        return recallKeyword(comMsgStr.substring(Command.撤回关键词.name.length), event.group)
+                        message.source.key
+                        return recallKeyword(message, comMsgStr.substring(Command.撤回关键词.name.length), event.group)
                     }
                 }
             }
@@ -315,14 +316,14 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabase) : G
     /**
      * 根据关键词撤回群员消息
      */
-    private suspend fun recallKeyword(keyword: String, group: Group): Boolean {
+    private suspend fun recallKeyword(senderMsg: MessageChain, keyword: String, group: Group): Boolean {
         if (cacheSize() < 1) return false
 
         for (i in cacheLastIndex() downTo cacheLastIndex() - min(128, cacheLastIndex())) {
-            val event = getCache(i)
-            if (event.message.toString().contains(keyword)) {
+            val message = getCache(i).message
+            if (message.toString().contains(keyword) && senderMsg.source != message.source) {
                 try {
-                    event.message.recall()
+                    message.recall()
                 } catch (e: IllegalStateException) {
                 }
             }
