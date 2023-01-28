@@ -54,11 +54,7 @@ class GroupScore(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
             memberData = MemberData(member.id, member.nameCardOrNick, addScore)
             database.addMember(memberData)
         } else {
-            var nameCardOrNick = member.nameCardOrNick
-            if (nameCardOrNick.length > 32) {
-                nameCardOrNick = nameCardOrNick.substring(0, 32)
-            }
-            memberData.name = nameCardOrNick
+            memberData.name = member.nameCardOrNick
             memberData.score += addScore
             database.setMember(memberData)
         }
@@ -205,8 +201,8 @@ class GroupScore(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
                 memberData.continueSignCount = 1
             }
             //连续签到奖励
-            val fromScore = min(7 + memberData.continueSignCount * 5, 37)
-            val untilScore = min(30 + memberData.continueSignCount * 5, 65)
+            val fromScore = min(10 + memberData.continueSignCount * 3, 31)
+            val untilScore = min(30 + memberData.continueSignCount * 4, 58)
             //生成随机数为签到的积分
             val randomScore = Random.nextInt(fromScore, untilScore)
             memberData.score += randomScore
