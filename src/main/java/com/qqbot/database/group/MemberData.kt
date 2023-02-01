@@ -15,10 +15,16 @@ class MemberData(
     var permission: Int = 0,
 ) {
 
-    var name: String = if (name.length > 32) name.substring(0, 32) else name
+    var name: String = name.toMysqlString()
         set(value) {
-            field = if (value.length > 32) value.substring(0, 32) else value
+            field = value.toMysqlString()
         }
+
+    private fun String.toMysqlString(): String {
+        return this.replace("\'", "\\'").let {
+            if (it.length > 32) it.substring(0, 32) else it
+        }
+    }
 
     override fun toString(): String {
         return "{id=$id, name='$name', score=$score, lastSignTime=$lastSignTime, continueSignCount=$continueSignCount, lastViolationTime=$lastViolationTime, violationCount=$violationCount, permission=$permission}"
