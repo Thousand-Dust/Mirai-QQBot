@@ -2,6 +2,7 @@ package com.qqbot.group
 
 import com.qqbot.TimeMillisecond
 import com.qqbot.database.group.GroupDatabase
+import com.qqbot.database.group.MemberData
 import com.qqbot.group.msg.GroupMsgProc
 import com.qqbot.group.msg.proc.*
 import kotlinx.coroutines.*
@@ -16,7 +17,7 @@ import net.mamoe.mirai.message.data.*
  * 单个群的消息总处理类
  * @author Thousand-Dust
  */
-class GroupHandler(myGroup: Group, my: Member) : GroupEventHandler(myGroup, my) {
+class GroupHandler(myGroup: Group) : GroupEventHandler(myGroup) {
 
     //数据库
     private val database = GroupDatabase(myGroup.id)
@@ -101,10 +102,21 @@ class GroupHandler(myGroup: Group, my: Member) : GroupEventHandler(myGroup, my) 
                     }
                 }
 
+
                 //处理消息
+                val sender = event.sender
+                var senderData = database.getMember(event.sender.id)
+                if (senderData == null) {
+                    senderData = MemberData(sender.id, sender.nameCardOrNick, 0)
+                    database.addMember(senderData)
+                } else if (senderData.name != sender.nameCardOrNick) {
+                    senderData.name = sender.nameCardOrNick
+                    database.setMember(senderData)
+                }
                 for (msgProc in msgProcList) {
+                    //逐一调用消息处理器，直到有一个处理器处理了消息
                     if (msgProc.process(event)) {
-                        return@launch
+                        break
                     }
                 }
 

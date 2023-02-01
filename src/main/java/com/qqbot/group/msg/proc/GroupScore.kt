@@ -54,7 +54,6 @@ class GroupScore(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
             memberData = MemberData(member.id, member.nameCardOrNick, addScore)
             database.addMember(memberData)
         } else {
-            memberData.name = member.nameCardOrNick
             memberData.score += addScore
             database.setMember(memberData)
         }
