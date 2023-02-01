@@ -421,8 +421,12 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabase) : G
         }
         //查询的数量
         val count = countMessage.toString().replace(" ", "").toInt()
-        //一查询的数量
+        //已查询的数量
         var index = 0
+        //消息字数
+        var length = 0
+        //消息图片数量
+        var imageCount = 0
 
         val forwardMessage = ForwardMessageBuilder(group)
 
@@ -430,6 +434,13 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabase) : G
         for (i in cacheLastIndex() downTo 0) {
             val event = getCache(i)
             if (event.sender.id == targetId) {
+                val msg = event.message
+                imageCount += msg.filterIsInstance<Image>().size
+                length += msg.contentToString().length
+                if (imageCount >= 50 || length >= 5000) {
+                    println("查询的消息数量过多，已自动停止查询")
+                    break
+                }
                 forwardMessage.add(event)
                 index++
                 if (index >= count) {
