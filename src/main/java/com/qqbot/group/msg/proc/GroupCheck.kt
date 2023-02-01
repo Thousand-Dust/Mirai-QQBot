@@ -267,7 +267,7 @@ class GroupCheck(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
             return false
         }
         var count = 0
-        for (i in cacheSize - 1 downTo cacheSize - 4) {
+        for (i in cacheSize - 1 downTo cacheSize - 3) {
             if (Utils.messageChainEqual(message, getCache(i).message)) {
                 count++
             }
