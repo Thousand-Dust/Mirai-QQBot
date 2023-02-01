@@ -1,6 +1,7 @@
 package com.qqbot.group.msg
 
 import com.qqbot.database.group.GroupDatabase
+import com.qqbot.database.group.MemberData
 import com.qqbot.group.GroupEventHandler
 import net.mamoe.mirai.event.events.GroupMessageEvent
 import java.util.stream.Stream
@@ -12,7 +13,6 @@ import java.util.stream.Stream
 abstract class GroupMsgProc(protected val groupHandler: GroupEventHandler, protected val database: GroupDatabase) {
 
     protected val myGroup = groupHandler.myGroup
-    protected val my = groupHandler.my
 
     /**
      * 收到消息需要处理时调用

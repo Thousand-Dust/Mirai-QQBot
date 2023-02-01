@@ -43,6 +43,7 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabase) : G
         关闭全员禁言,
         禁言列表,
         全部解禁,
+        清屏,
     }
 
     //封印列表
@@ -52,12 +53,11 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabase) : G
         //检查封印
         run {
             val senderId = event.sender.id
-            val num = sealMap[senderId] ?: return@run
+            val num = (sealMap[senderId] ?: return@run) - 1
+            sealMap[senderId] = num
             if (num <= 0) {
                 sealMap.remove(senderId)
-                return@run
             }
-            sealMap[senderId] = num - 1
             event.message.recall()
             return true
         }
@@ -96,7 +96,8 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabase) : G
                 "全员禁言：" + Command.开启全员禁言 + "\n" +
                 "关闭全员禁言：" + Command.关闭全员禁言 + "\n" +
                 "查看被禁言群员列表：" + Command.禁言列表 + "\n" +
-                "解除所有群员的禁言：" + Command.全部解禁 + "\n"
+                "解除所有群员的禁言：" + Command.全部解禁 + "\n" +
+                "清屏：" + Command.清屏 + ""
     }
 
     /**
@@ -134,6 +135,9 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabase) : G
                 }
                 Command.全部解禁.name -> {
                     return memberUnmuteAll(event.group)
+                }
+                Command.清屏.name -> {
+                    return clearScreen(event.group)
                 }
                 else -> {
                     val comMsgStr = command.toString()
@@ -264,7 +268,7 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabase) : G
             return true
         }
         //检查权限
-        if (my.permission.level <= target.permission.level) {
+        if (group.botAsMember.permission.level <= target.permission.level) {
             group.sendMessage("机器人权限不足")
             return true
         }
@@ -509,6 +513,14 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabase) : G
             }
             group.sendMessage("已解除所有群员的禁言")
         }
+        return true
+    }
+
+    /**
+     * 清屏
+     */
+    private suspend fun clearScreen(group: Group): Boolean {
+        group.sendMessage(("清屏"+("\n").repeat(20)).repeat(10))
         return true
     }
 
