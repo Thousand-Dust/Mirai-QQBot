@@ -20,6 +20,7 @@ import net.mamoe.mirai.message.data.MessageSource.Key.recall
 import net.mamoe.mirai.message.data.PlainText
 import net.mamoe.mirai.message.data.time
 import java.util.stream.Collectors
+import kotlin.random.Random
 
 /**
  * 群消息检测系统
@@ -40,6 +41,7 @@ class GroupCheck(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
         if (checkDirtyWord(event)) {
             return true
         }
+        repeatMessage(event)
 
         return false
     }
@@ -86,11 +88,11 @@ class GroupCheck(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
                 event.group.sendMessage(At(event.sender) + " 请注意言辞！code: 002")
                 return true
             }*/
-            "广告" -> {
+            /*"广告" -> {
                 if (!checkPermission(database, event.group, event.sender, isSendMsg = false)) return false
                 event.message.recall()
                 event.group.sendMessage(At(event.sender) + " 禁止打广告！")
-            }
+            }*/
             /*"其他" -> {
                 if (!checkPermission(database, event.group, event.sender, isSendMsg = false)) return false
                 val historyMsg = cacheStreamCall { stream ->
@@ -271,9 +273,10 @@ class GroupCheck(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
             }
         }
         if (count >= 3) {
-            event.message.recall()
-            val at = At(event.sender.id)
-            event.group.sendMessage(at + " 禁止复读")
+//            event.message.recall()
+//            val at = At(event.sender.id)
+//            event.group.sendMessage(at + " 禁止复读")
+            event.group.sendMessage(if (message.contentToString() == "打断施法") "打断施法" + Random(System.currentTimeMillis()).nextInt() else "打断施法")
             return true
         }
         return false
