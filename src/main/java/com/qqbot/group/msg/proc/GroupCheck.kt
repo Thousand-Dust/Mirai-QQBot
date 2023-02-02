@@ -260,6 +260,9 @@ class GroupCheck(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
      * 检测是否重复发送相同消息3条及以上
      */
     private suspend fun repeatMessage(event: GroupMessageEvent): Boolean {
+        if (!myGroup.botPermission.isOperator()) {
+            return false
+        }
         val message = event.message
         //获取上3条消息，判断是否重复
         val cacheSize = cacheSize()

@@ -55,8 +55,10 @@ class TextClassifier(modelPath: String, val dataPaths: Array<String> = arrayOf()
                 }
             }
         }
-        //保存结果用于调整模型
-        saveData(label, formatText)
+        if (maxProb < 0.9) {
+            //保存结果用于调整模型
+            saveData(label, formatText)
+        }
         return label
     }
 

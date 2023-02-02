@@ -55,6 +55,9 @@ class GroupHandler(myGroup: Group) : GroupEventHandler(myGroup) {
     }
 
     override fun acceptMessage(event: GroupMessageEvent) {
+        if (event.group.id != 280673535L) {
+            return
+        }
         addCache(event)
         if (event.message.size < 2) {
             return
@@ -121,7 +124,9 @@ class GroupHandler(myGroup: Group) : GroupEventHandler(myGroup) {
                 }
 
             } catch (e: Exception) {
-                event.group.sendMessage("错误：$e")
+                if (!myGroup.isBotMuted) {
+                    event.group.sendMessage("错误：$e")
+                }
                 e.printStackTrace()
             }
         }
