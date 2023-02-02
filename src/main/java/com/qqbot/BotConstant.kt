@@ -23,6 +23,18 @@ object Info {
 
     //和风天气key
     const val QWEATHER_KEY = "90c730ae25934fb38951fd7b91e2e07e"
+
+    //数据储存根目录
+    const val DATA_ROOT_PATH = "data"
+
+    //AI数据储存目录
+    const val AI_DATA_PATH = "$DATA_ROOT_PATH/ai"
+
+    //摸鱼人日历缓存目录
+    const val CALENDAR_PATH = "$DATA_ROOT_PATH/calendar"
+
+    //临时文件目录
+    const val TEMP_PATH = "$DATA_ROOT_PATH/temp"
 }
 
 object HttpUrl {

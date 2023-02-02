@@ -45,6 +45,7 @@ class GroupHandler(myGroup: Group) : GroupEventHandler(myGroup) {
         msgProcList.add(GroupCheck(this, database))
         msgProcList.add(GroupScore(this, database))
         msgProcList.add(GroupRecreation(this, database))
+
         return true
     }
 
@@ -55,9 +56,6 @@ class GroupHandler(myGroup: Group) : GroupEventHandler(myGroup) {
     }
 
     override fun acceptMessage(event: GroupMessageEvent) {
-        if (event.group.id != 280673535L) {
-            return
-        }
         addCache(event)
         if (event.message.size < 2) {
             return

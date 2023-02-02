@@ -1,6 +1,5 @@
 package com.qqbot.group
 
-import com.qqbot.TimeMillisecond
 import com.qqbot.database.group.GroupDatabase
 import com.qqbot.database.group.MemberData
 import net.mamoe.mirai.contact.*

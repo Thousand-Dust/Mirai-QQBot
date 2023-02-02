@@ -1,7 +1,6 @@
 package com.qqbot.group.msg
 
 import com.qqbot.database.group.GroupDatabase
-import com.qqbot.database.group.MemberData
 import com.qqbot.group.GroupEventHandler
 import net.mamoe.mirai.event.events.GroupMessageEvent
 import java.util.stream.Stream
