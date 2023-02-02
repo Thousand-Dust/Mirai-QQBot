@@ -34,6 +34,9 @@ class GroupOwner(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
     }
 
     override suspend fun process(event: GroupMessageEvent): Boolean {
+        if (myGroup.isBotMuted) {
+            return false
+        }
         return command(event)
     }
 

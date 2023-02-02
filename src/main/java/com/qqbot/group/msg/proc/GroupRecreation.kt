@@ -15,11 +15,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import net.mamoe.mirai.Bot
 import net.mamoe.mirai.contact.Group
+import net.mamoe.mirai.contact.isBotMuted
 import net.mamoe.mirai.event.events.GroupMessageEvent
-import net.mamoe.mirai.message.data.Audio
 import net.mamoe.mirai.message.data.Image
-import net.mamoe.mirai.message.data.sendTo
-import net.mamoe.mirai.message.data.sourceOrNull
 import net.mamoe.mirai.utils.ExternalResource
 import net.mamoe.mirai.utils.ExternalResource.Companion.toExternalResource
 import java.io.File
@@ -118,6 +116,9 @@ class GroupRecreation(groupHandler: GroupHandler, database: GroupDatabase) : Gro
     }
 
     override suspend fun process(event: GroupMessageEvent): Boolean {
+        if (myGroup.isBotMuted) {
+            return false
+        }
         return command(event)
     }
 

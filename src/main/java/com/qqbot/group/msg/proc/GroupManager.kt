@@ -8,10 +8,7 @@ import com.qqbot.group.GroupEventHandler
 import com.qqbot.group.checkPermission
 import com.qqbot.group.msg.GroupMsgProc
 import com.qqbot.timeFormat
-import net.mamoe.mirai.contact.Group
-import net.mamoe.mirai.contact.Member
-import net.mamoe.mirai.contact.isOperator
-import net.mamoe.mirai.contact.nameCardOrNick
+import net.mamoe.mirai.contact.*
 import net.mamoe.mirai.event.events.GroupMessageEvent
 import net.mamoe.mirai.message.data.*
 import net.mamoe.mirai.message.data.MessageSource.Key.recall
@@ -60,6 +57,9 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabase) : G
             }
             event.message.recall()
             return true
+        }
+        if (myGroup.isBotMuted) {
+            return false
         }
 
         return command(event)

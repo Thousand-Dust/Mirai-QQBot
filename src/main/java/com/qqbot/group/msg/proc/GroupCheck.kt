@@ -10,17 +10,13 @@ import com.qqbot.database.group.MemberData
 import com.qqbot.group.GroupEventHandler
 import com.qqbot.group.checkPermission
 import com.qqbot.group.msg.GroupMsgProc
-import net.mamoe.mirai.contact.Group
-import net.mamoe.mirai.contact.Member
-import net.mamoe.mirai.contact.isOperator
-import net.mamoe.mirai.contact.nameCardOrNick
+import net.mamoe.mirai.contact.*
 import net.mamoe.mirai.event.events.GroupMessageEvent
 import net.mamoe.mirai.message.data.At
 import net.mamoe.mirai.message.data.MessageSource.Key.recall
 import net.mamoe.mirai.message.data.PlainText
 import net.mamoe.mirai.message.data.time
 import java.util.stream.Collectors
-import kotlin.random.Random
 
 /**
  * 群消息检测系统
@@ -30,6 +26,10 @@ class GroupCheck(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
     private val textClassifier = TextClassifier("ai/model.bin")
 
     override suspend fun process(event: GroupMessageEvent): Boolean {
+        if (myGroup.isBotMuted) {
+            checkDirtyWord(event)
+            return false
+        }
         if (checkPermission(database, event.group, event.sender, isSendMsg = false)) {
             if (brushScreen(event)) {
                 return true
@@ -70,7 +70,7 @@ class GroupCheck(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
         if (msgStr.length > 128 || msgStr1.isEmpty()) return false
 
         val label = textClassifier.categorize(msgStr)
-        if (!myGroup.botPermission.isOperator()) {
+        if (!myGroup.botPermission.isOperator() || myGroup.isBotMuted) {
             return false
         }
         when (label) {
@@ -279,7 +279,7 @@ class GroupCheck(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
 //            event.message.recall()
 //            val at = At(event.sender.id)
 //            event.group.sendMessage(at + " 禁止复读")
-            event.group.sendMessage(if (message.contentToString() == "打断施法") "打断施法" + Random(System.currentTimeMillis()).nextInt() else "打断施法")
+            event.group.sendMessage(if (message.contentToString() == "打断施法") "打断施法1" else "打断施法")
             return true
         }
         return false

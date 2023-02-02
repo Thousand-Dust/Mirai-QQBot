@@ -3,6 +3,11 @@ package com.qqbot.group
 import com.qqbot.Info
 import com.qqbot.database.group.MemberData
 
+object GroupInfo {
+    //群处理器配置路径
+    val PROC_SETTING_PATH = Info.DATA_ROOT_PATH + "procSetting"
+}
+
 /**
  * QQ群成员权限
  */
