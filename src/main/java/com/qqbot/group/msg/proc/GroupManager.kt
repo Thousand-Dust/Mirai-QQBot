@@ -93,8 +93,7 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabase) : G
                 "解除封印：" + Command.解除封印 + "+@目标\n" +
                 "查看封印列表：" + Command.封印列表 + "\n" +
                 "查询消息记录：" + Command.查询消息记录 + "@目标+查询数量(默认5)\n" +
-                "全员禁言：" + Command.开启全员禁言 + "\n" +
-                "关闭全员禁言：" + Command.关闭全员禁言 + "\n" +
+                "开启/关闭全员禁言：(开启/关闭)全员禁言\n" +
                 "查看被禁言群员列表：" + Command.禁言列表 + "\n" +
                 "解除所有群员的禁言：" + Command.全部解禁 + "\n" +
                 "清屏：" + Command.清屏 + ""
