@@ -41,7 +41,7 @@ class GroupCheck(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
         if (checkDirtyWord(event)) {
             return true
         }
-        repeatMessage(event)
+//        repeatMessage(event)
 
         return false
     }
