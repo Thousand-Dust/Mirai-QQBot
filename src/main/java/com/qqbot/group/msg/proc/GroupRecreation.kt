@@ -6,7 +6,8 @@ import com.qqbot.HttpUrl
 import com.qqbot.HttpUtils
 import com.qqbot.Info
 import com.qqbot.Utils
-import com.qqbot.api.qweather.QWeather
+import com.qqbot.api.QWeather
+import com.qqbot.api.QWeatherCode
 import com.qqbot.api.sogouTextToAudio
 import com.qqbot.database.group.GroupDatabase
 import com.qqbot.group.GroupHandler
@@ -248,7 +249,7 @@ class GroupRecreation(groupHandler: GroupHandler, database: GroupDatabase) : Gro
             return@withContext null
         }
         val statusCode = weather.getStatusCode(cityJson.getString("code"))!!
-        if (statusCode != QWeather.StatusCode.SUCCESS) {
+        if (statusCode != QWeatherCode.SUCCESS) {
             group.sendMessage(statusCode.toString())
             return@withContext null
         }
@@ -286,7 +287,7 @@ class GroupRecreation(groupHandler: GroupHandler, database: GroupDatabase) : Gro
             return@withContext
         }
         val statusCode = weather.getStatusCode(weatherJson.getString("code"))!!
-        if (statusCode != QWeather.StatusCode.SUCCESS) {
+        if (statusCode != QWeatherCode.SUCCESS) {
             group.sendMessage(statusCode.toString())
             return@withContext
         }
@@ -333,7 +334,7 @@ class GroupRecreation(groupHandler: GroupHandler, database: GroupDatabase) : Gro
             return@withContext
         }
         val statusCode = weather.getStatusCode(weatherJson.getString("code"))!!
-        if (statusCode != QWeather.StatusCode.SUCCESS) {
+        if (statusCode != QWeatherCode.SUCCESS) {
             group.sendMessage(statusCode.toString())
             return@withContext
         }
@@ -368,7 +369,7 @@ class GroupRecreation(groupHandler: GroupHandler, database: GroupDatabase) : Gro
             return@withContext
         }
         val statusCode = weather.getStatusCode(weatherJson.getString("code"))!!
-        if (statusCode != QWeather.StatusCode.SUCCESS) {
+        if (statusCode != QWeatherCode.SUCCESS) {
             group.sendMessage(statusCode.toString())
             return@withContext
         }
@@ -413,7 +414,7 @@ class GroupRecreation(groupHandler: GroupHandler, database: GroupDatabase) : Gro
             return@withContext
         }
         val statusCode = weather.getStatusCode(weatherJson.getString("code"))!!
-        if (statusCode != QWeather.StatusCode.SUCCESS) {
+        if (statusCode != QWeatherCode.SUCCESS) {
             group.sendMessage(statusCode.toString())
             return@withContext
         }
@@ -449,7 +450,7 @@ class GroupRecreation(groupHandler: GroupHandler, database: GroupDatabase) : Gro
             return@withContext
         }
         val statusCode = weather.getStatusCode(weatherJson.getString("code"))!!
-        if (statusCode != QWeather.StatusCode.SUCCESS) {
+        if (statusCode != QWeatherCode.SUCCESS) {
             group.sendMessage(statusCode.toString())
             return@withContext
         }
