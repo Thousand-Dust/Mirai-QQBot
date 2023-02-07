@@ -58,7 +58,7 @@ object HttpUrl {
      * 7天天气预报 (GET)
      * https://dev.qweather.com/docs/api/weather/weather-daily-forecast/
      */
-    const val ThreeDayWeather = "https://devapi.qweather.com/v7/weather/7d"
+    const val SevenDayWeather = "https://devapi.qweather.com/v7/weather/7d"
 
     /**
      * 今日天气指数预报

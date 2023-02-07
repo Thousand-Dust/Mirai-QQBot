@@ -6,7 +6,7 @@ import com.qqbot.HttpUrl
 import com.qqbot.HttpUtils
 import com.qqbot.Info
 import com.qqbot.Utils
-import com.qqbot.api.QWeather
+import com.qqbot.api.qweather.QWeather
 import com.qqbot.api.sogouTextToAudio
 import com.qqbot.database.group.GroupDatabase
 import com.qqbot.group.GroupHandler
