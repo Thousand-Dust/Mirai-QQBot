@@ -4,6 +4,8 @@ import com.qqbot.database.group.GroupDatabase
 import com.qqbot.group.GroupHandler
 import com.qqbot.group.msg.GroupMsgProc
 import net.mamoe.mirai.event.events.GroupMessageEvent
+import net.mamoe.mirai.event.events.GroupMessagePostSendEvent
+import net.mamoe.mirai.event.events.MessagePreSendEvent
 
 /**
  * 群 主人系统
@@ -13,6 +15,7 @@ class GroupMaster(groupHandler: GroupHandler, database: GroupDatabase) : GroupMs
     private enum class Command {
         开机,
         关机,
+        加积分,
     }
 
     override suspend fun process(event: GroupMessageEvent): Boolean {

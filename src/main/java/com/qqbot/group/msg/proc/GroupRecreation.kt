@@ -29,11 +29,11 @@ class GroupRecreation(groupHandler: GroupHandler, database: GroupDatabase) : Gro
 
     companion object {
         //摸鱼人日历图片储存路径
-        private const val CalendarImagePath = "temp/calendar.png"
-        private const val CalendarDataPath = "temp/calendar.txt"
+        private const val CalendarImagePath = Info.DATA_ROOT_PATH+"/calendar.png"
+        private const val CalendarDataPath = Info.DATA_ROOT_PATH+"/calendar.txt"
 
         //语音文件缓存路径
-        private const val AudioCachePath = "temp/audioCache/"
+        private const val AudioCachePath = Info.TEMP_PATH+"/audioCache/"
 
         //摸鱼人日历资源文件
         private var resource: ExternalResource? = null

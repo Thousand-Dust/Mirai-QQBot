@@ -5,7 +5,7 @@ import com.qqbot.database.group.GroupDatabase
 import com.qqbot.database.group.MemberData
 import com.qqbot.group.GroupEventHandler
 import com.qqbot.group.GroupPermission
-import com.qqbot.group.GroupPermission.isOperator
+import com.qqbot.group.isOperator
 import com.qqbot.group.msg.GroupMsgProc
 import net.mamoe.mirai.contact.*
 import net.mamoe.mirai.event.events.GroupMessageEvent
@@ -99,7 +99,7 @@ class GroupOwner(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
      * 获取群管列表
      */
     private suspend fun getManagerList(group: Group) {
-        val managerList = database.getPermissions(GroupPermission.ADMIN)
+        val managerList = database.getPermissions(GroupPermission.ADMIN.level)
         if (managerList.isEmpty()) {
             group.sendMessage("当前群没有群管")
             return
@@ -147,11 +147,11 @@ class GroupOwner(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
             return true
         }
         if (targetData == null) {
-            database.addMember(MemberData(targetId, target.nameCardOrNick, permission = GroupPermission.ADMIN))
+            database.addMember(MemberData(targetId, target.nameCardOrNick, permission = GroupPermission.ADMIN.level))
             group.sendMessage("添加群管成功")
             return true
         }
-        targetData.permission = GroupPermission.ADMIN
+        targetData.permission = GroupPermission.ADMIN.level
         database.setMember(targetData)
         group.sendMessage("添加群管成功")
         return true
@@ -172,7 +172,7 @@ class GroupOwner(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
             group.sendMessage("该成员不是群管")
             return true
         }
-        targetData.permission = GroupPermission.MEMBER
+        targetData.permission = GroupPermission.MEMBER.level
         database.setMember(targetData)
         group.sendMessage("删除群管成功")
         return true
