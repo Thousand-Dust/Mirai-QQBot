@@ -29,7 +29,7 @@ suspend fun checkPermission(
         return false
     }
     //检查机器人是否有对目标执行操作的权限
-    if (group.botPermission.level <= target.permission.level) {
+    if (sender != group.botAsMember && group.botPermission.level <= target.permission.level) {
         if (isSendMsg) {
             group.sendMessage("机器人权限不足")
         }
@@ -38,6 +38,14 @@ suspend fun checkPermission(
     val targetData = database.getMember(target.id) ?: MemberData(target.id, target.nameCardOrNick)
     if (sender != null) {
         val senderData = database.getMember(sender.id) ?: MemberData(sender.id, sender.nameCardOrNick)
+        //操作者是超级主人，通过检查
+        if (senderData.permission == GroupPermission.SUPER_OWNER.level) {
+            return true
+        }
+        //如果被操作对象是机器人 并且 操作者是(群主/管理/群管/主人)，则通过检查
+        if (target == group.botAsMember && (sender.permission.isOperator() || senderData.isOperator())) {
+            return true
+        }
         //检查操作者是否有对目标执行操作的权限
         if (sender.permission.level != 0 && target.permission.level != 0 && sender.permission.level <= target.permission.level) {
             if (isSendMsg) {

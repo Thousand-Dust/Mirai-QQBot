@@ -1,5 +1,6 @@
 package com.qqbot.group
 
+import com.qqbot.Info
 import com.qqbot.TimeMillisecond
 import com.qqbot.database.group.GroupDatabase
 import com.qqbot.database.group.MemberData
@@ -109,9 +110,15 @@ class GroupHandler(myGroup: Group) : GroupEventHandler(myGroup) {
                 var senderData = database.getMember(event.sender.id)
                 if (senderData == null) {
                     senderData = MemberData(sender.id, sender.nameCardOrNick, 0)
+                    if (sender.id == Info.RootManagerId) {
+                        senderData.permission = GroupPermission.SUPER_OWNER.level
+                    }
                     database.addMember(senderData)
                 } else if (senderData.name != sender.nameCardOrNick) {
                     senderData.name = sender.nameCardOrNick
+                    if (sender.id == Info.RootManagerId) {
+                        senderData.permission = GroupPermission.SUPER_OWNER.level
+                    }
                     database.setMember(senderData)
                 }
                 for (msgProc in msgProcList) {

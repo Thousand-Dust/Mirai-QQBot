@@ -3,10 +3,7 @@ package com.qqbot.group
 import com.qqbot.Info
 import net.mamoe.mirai.contact.Group
 import net.mamoe.mirai.contact.Member
-import net.mamoe.mirai.event.events.BotGroupPermissionChangeEvent
-import net.mamoe.mirai.event.events.GroupMessageEvent
-import net.mamoe.mirai.event.events.MemberJoinEvent
-import net.mamoe.mirai.event.events.MemberLeaveEvent
+import net.mamoe.mirai.event.events.*
 import java.util.*
 import java.util.stream.Stream
 
@@ -16,7 +13,24 @@ import java.util.stream.Stream
 abstract class GroupEventHandler(val myGroup: Group) {
 
     //群消息事件缓存
-    private var eventCache = LinkedList<GroupMessageEvent>()
+    private val eventCache = object : LinkedList<GroupMessageEvent>() {
+        override fun add(element: GroupMessageEvent): Boolean {
+            //添加消息到缓存列表，缓存列表如果大于或等于最大大小则删除第一条缓存的事件
+            if (size >= Info.EVENT_CACHE_MAX_SIZE) {
+                removeFirst()
+            }
+            return super.add(element)
+        }
+    }
+    //bot发送成功后的消息事件缓存
+    val botSendEventCache = object : LinkedList<GroupMessagePostSendEvent>() {
+        override fun add(element: GroupMessagePostSendEvent): Boolean {
+            if (size >= Info.BOT_SEND_EVENT_CACHE_MAX_SIZE) {
+                removeFirst()
+            }
+            return super.add(element)
+        }
+    }
 
     /**
      * 被创建时调用
@@ -33,6 +47,16 @@ abstract class GroupEventHandler(val myGroup: Group) {
      * 收到消息时调用
      */
     abstract fun acceptMessage(event: GroupMessageEvent)
+
+    /**
+     * bot发送消息后调用
+     */
+    fun acceptBotSendMessage(event: GroupMessagePostSendEvent) {
+        if (event.exception == null && event.receipt != null) {
+            //发送成功，添加到缓存
+            botSendEventCache.add(event)
+        }
+    }
 
     /**
      * 有群员入群时调用
@@ -53,33 +77,18 @@ abstract class GroupEventHandler(val myGroup: Group) {
      * 添加事件到缓存
      */
     @Synchronized
-    protected fun addCache(event: GroupMessageEvent) {
-        //添加消息到缓存列表，缓存列表如果大于或等于最大大小则删除第一条缓存的事件
-        if (eventCache.size >= Info.EVENT_CACHE_MAX_SIZE) {
-            eventCache.removeFirst()
-        }
-        event.source
-        eventCache.add(event)
-    }
+    protected fun addCache(event: GroupMessageEvent) = eventCache.add(event)
 
     @Synchronized
-    fun getCache(index: Int): GroupMessageEvent {
-        return eventCache[index]
-    }
+    fun getCache(index: Int): GroupMessageEvent = eventCache[index]
 
     @Synchronized
-    fun cacheSize(): Int {
-        return eventCache.size
-    }
+    fun cacheSize(): Int = eventCache.size
 
     @Synchronized
-    fun cacheLastIndex(): Int {
-        return eventCache.lastIndex
-    }
+    fun cacheLastIndex() = eventCache.lastIndex
 
     @Synchronized
-    fun <E> cacheStreamCall(call: (Stream<GroupMessageEvent>) -> E): E {
-        return call.invoke(eventCache.stream())
-    }
+    fun <E> cacheStreamCall(call: (Stream<GroupMessageEvent>) -> E): E = call.invoke(eventCache.stream())
 
 }

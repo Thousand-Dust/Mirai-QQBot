@@ -11,16 +11,21 @@ object GroupInfo {
 /**
  * QQ群成员权限
  */
-object GroupPermission {
+enum class GroupPermission : Comparable<GroupPermission> {
     //群员
-    const val MEMBER = 0
+    MEMBER,
     //群管
-    const val ADMIN = 1
+    ADMIN,
+    //主人
+    SUPER_OWNER;
 
-    /**
-     * 判断是否为管理员或主人
-     */
-    fun MemberData.isOperator(): Boolean {
-        return this.permission >= ADMIN || this.id == Info.RootManagerId
-    }
+    val level: Int
+    get() = ordinal
+}
+
+/**
+ * 判断是否为管理员或主人
+ */
+fun MemberData.isOperator(): Boolean {
+    return this.permission >= GroupPermission.ADMIN.level || this.id == Info.RootManagerId
 }

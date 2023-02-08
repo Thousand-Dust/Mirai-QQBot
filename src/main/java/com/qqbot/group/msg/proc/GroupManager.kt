@@ -1,17 +1,18 @@
 package com.qqbot.group.msg.proc
 
-import com.qqbot.group.GroupPermission.isOperator
 import com.qqbot.Info
 import com.qqbot.TimeMillisecond
 import com.qqbot.database.group.GroupDatabase
 import com.qqbot.group.GroupEventHandler
 import com.qqbot.group.checkPermission
+import com.qqbot.group.isOperator
 import com.qqbot.group.msg.GroupMsgProc
 import com.qqbot.timeFormat
 import net.mamoe.mirai.contact.*
 import net.mamoe.mirai.event.events.GroupMessageEvent
 import net.mamoe.mirai.message.data.*
 import net.mamoe.mirai.message.data.MessageSource.Key.recall
+import net.mamoe.mirai.message.sourceTime
 import java.util.*
 import kotlin.math.min
 
@@ -141,7 +142,6 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabase) : G
                 else -> {
                     val comMsgStr = command.toString()
                     if (comMsgStr.startsWith(Command.撤回关键词.name)) {
-                        message.source.key
                         return recallKeyword(message, comMsgStr.substring(Command.撤回关键词.name.length), event.group)
                     }
                 }
@@ -157,13 +157,23 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabase) : G
                     return kick(message[2], event.sender, event.group, true)
                 }
                 Command.禁言.name, Command.ban.name -> {
-                    return mute(message[2], isSingleMessageEmpty(message, 3, PlainText("10m")), event.sender, event.group)
+                    return mute(
+                        message[2],
+                        isSingleMessageEmpty(message, 3, PlainText("10m")),
+                        event.sender,
+                        event.group
+                    )
                 }
                 Command.解禁.name, Command.kj.name -> {
                     return unmute(message[2], event.sender, event.group)
                 }
                 Command.撤回.name -> {
-                    return recall(message[2], isSingleMessageEmpty(message, 3, PlainText("10")), event.sender, event.group)
+                    return recall(
+                        message[2],
+                        isSingleMessageEmpty(message, 3, PlainText("10")),
+                        event.sender,
+                        event.group
+                    )
                 }
                 Command.封印.name -> {
                     return seal(message[2], isSingleMessageEmpty(message, 3, PlainText("5")), event.sender, event.group)
@@ -184,7 +194,12 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabase) : G
      * 踢出群成员
      * @param targetMessage 目标群成员 [SingleMessage] (@群成员)
      */
-    private suspend fun kick(targetMessage: SingleMessage, sender: Member, group: Group, block: Boolean = false): Boolean {
+    private suspend fun kick(
+        targetMessage: SingleMessage,
+        sender: Member,
+        group: Group,
+        block: Boolean = false
+    ): Boolean {
         val targetId = if (targetMessage is At) targetMessage.target else return false
         val target = group[targetId]
         if (target == null) {
@@ -205,7 +220,12 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabase) : G
      * @param targetMessage 目标群成员 [SingleMessage] (@群成员)
      * @param timeMessage 禁言时间 [SingleMessage]
      */
-    private suspend fun mute(targetMessage: SingleMessage, timeMessage: SingleMessage, sender: Member, group: Group): Boolean {
+    private suspend fun mute(
+        targetMessage: SingleMessage,
+        timeMessage: SingleMessage,
+        sender: Member,
+        group: Group
+    ): Boolean {
         val targetId = if (targetMessage is At) targetMessage.target else return false
         val target = group[targetId]
         if (target == null) {
@@ -282,7 +302,12 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabase) : G
      * @param targetMessage 目标群成员 [SingleMessage] (@群成员)
      * @param countMessage 撤回消息数量 [SingleMessage] (PlainText)
      */
-    private suspend fun recall(targetMessage: SingleMessage, countMessage: SingleMessage, sender: Member, group: Group): Boolean {
+    private suspend fun recall(
+        targetMessage: SingleMessage,
+        countMessage: SingleMessage,
+        sender: Member,
+        group: Group
+    ): Boolean {
         if (cacheSize() < 1) return false
 
         val targetId = if (targetMessage is At) targetMessage.target else return false
@@ -299,9 +324,10 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabase) : G
         val count = countMessage.toString().replace(" ", "").toInt()
         //已撤回的数量
         var index = 0
-        for (i in cacheLastIndex() downTo 0) {
-            val event = getCache(i)
-            if (event.sender.id == targetId) {
+        if (targetId == myGroup.botAsMember.id) {
+            //被撤回对象是机器人
+            for (i in groupHandler.botSendEventCache.lastIndex downTo 0) {
+                val event = groupHandler.botSendEventCache[i]
                 try {
                     event.message.recall()
                     index++
@@ -309,6 +335,21 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabase) : G
                 }
                 if (index >= count) {
                     break
+                }
+            }
+        } else {
+            //被撤回对象是其他群员
+            for (i in cacheLastIndex() downTo 0) {
+                val event = getCache(i)
+                if (event.sender.id == targetId) {
+                    try {
+                        event.message.recall()
+                        index++
+                    } catch (e: IllegalStateException) {
+                    }
+                    if (index >= count) {
+                        break
+                    }
                 }
             }
         }
@@ -338,7 +379,12 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabase) : G
     /**
      * 封印群员（群员封印状态下发消息会直接被撤回）
      */
-    private suspend fun seal(targetMessage: SingleMessage, countMessage: SingleMessage, sender: Member, group: Group): Boolean {
+    private suspend fun seal(
+        targetMessage: SingleMessage,
+        countMessage: SingleMessage,
+        sender: Member,
+        group: Group
+    ): Boolean {
         val targetId = if (targetMessage is At) targetMessage.target else return false
         if (countMessage !is PlainText) {
             return false
@@ -430,22 +476,48 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabase) : G
 
         val forwardMessage = ForwardMessageBuilder(group)
 
-        //将消息拼接
-        for (i in cacheLastIndex() downTo 0) {
-            val event = getCache(i)
-            if (event.sender.id == targetId) {
+        if (targetId == myGroup.botAsMember.id) {
+            //被查询对象是机器人
+            for (i in groupHandler.botSendEventCache.lastIndex downTo 0) {
+                val event = groupHandler.botSendEventCache[i]
                 val msg = event.message
                 imageCount += msg.filterIsInstance<Image>().size
                 length += msg.contentToString().length
                 //判断消息内容是否超出可发送范围
                 if (imageCount >= 45 || length >= 4500) {
-                    forwardMessage.add(myGroup.botAsMember, MessageChainBuilder().append("查询的消息数量过多，已自动停止查询").build())
+                    forwardMessage.add(
+                        myGroup.botAsMember,
+                        MessageChainBuilder().append("查询的消息数量过多，已自动停止查询").build()
+                    )
                     break
                 }
-                forwardMessage.add(event)
+                forwardMessage.add(myGroup.botAsMember, msg, event.receipt?.sourceTime ?: -1)
                 index++
                 if (index >= count) {
                     break
+                }
+            }
+        } else {
+            //被查询对象是其他群员
+            for (i in cacheLastIndex() downTo 0) {
+                val event = getCache(i)
+                if (event.sender.id == targetId) {
+                    val msg = event.message
+                    imageCount += msg.filterIsInstance<Image>().size
+                    length += msg.contentToString().length
+                    //判断消息内容是否超出可发送范围
+                    if (imageCount >= 45 || length >= 4500) {
+                        forwardMessage.add(
+                            myGroup.botAsMember,
+                            MessageChainBuilder().append("查询的消息数量过多，已自动停止查询").build()
+                        )
+                        break
+                    }
+                    forwardMessage.add(event)
+                    index++
+                    if (index >= count) {
+                        break
+                    }
                 }
             }
         }
@@ -532,7 +604,7 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabase) : G
      * 清屏
      */
     private suspend fun clearScreen(group: Group): Boolean {
-        group.sendMessage(("清屏"+("\n").repeat(20)).repeat(10))
+        group.sendMessage(("清屏" + ("\n").repeat(20)).repeat(10))
         return true
     }
 

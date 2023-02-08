@@ -36,15 +36,23 @@ class GroupEventHandOut(private val bot: Bot, private val onCreateHandler: (Grou
         }
         coroutineScope = CoroutineScope(SupervisorJob())
         bot.eventChannel.parentScope(coroutineScope!!).let {
+            //群消息事件
             it.subscribeAlways<GroupMessageEvent> { event ->
                 groupHandlers[event.group.id]?.acceptMessage(event)
             }
+            //bot发送消息后事件
+            it.subscribeAlways<GroupMessagePostSendEvent> { event ->
+                groupHandlers[event.target.id]?.acceptBotSendMessage(event)
+            }
+            //群成员加入事件
             it.subscribeAlways<MemberJoinEvent> { event ->
                 groupHandlers[event.group.id]?.onMemberJoin(event)
             }
+            //群成员离开事件
             it.subscribeAlways<MemberLeaveEvent> { event ->
                 groupHandlers[event.group.id]?.onMemberLeave(event)
             }
+            //bot加入群事件
             it.subscribeAlways<BotJoinGroupEvent> { event ->
                 val group = event.group
                 val groupHandler = onCreateHandler(group)
@@ -52,8 +60,13 @@ class GroupEventHandOut(private val bot: Bot, private val onCreateHandler: (Grou
                     groupHandlers[group.id] = groupHandler
                 }
             }
+            //bot被踢出群事件
             it.subscribeAlways<BotLeaveEvent> { event ->
                 groupHandlers.remove(event.groupId)?.onRemove()
+            }
+            //bot在群里的权限变化事件
+            it.subscribeAlways<BotGroupPermissionChangeEvent> { event ->
+                groupHandlers[event.group.id]?.onMyPermissionChange(event)
             }
             Unit
         }

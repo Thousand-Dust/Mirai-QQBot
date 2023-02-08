@@ -42,20 +42,12 @@ abstract class GroupMsgProc(protected val groupHandler: GroupEventHandler, prote
      */
     abstract fun getMenu(event: GroupMessageEvent): String?
 
-    fun getCache(index: Int): GroupMessageEvent {
-        return groupHandler.getCache(index)
-    }
+    fun getCache(index: Int): GroupMessageEvent = groupHandler.getCache(index)
 
-    fun cacheSize(): Int {
-        return groupHandler.cacheSize()
-    }
+    fun cacheSize(): Int = groupHandler.cacheSize()
 
-    fun cacheLastIndex(): Int {
-        return groupHandler.cacheLastIndex()
-    }
+    fun cacheLastIndex(): Int = groupHandler.cacheLastIndex()
 
-    fun <E> cacheStreamCall(call: (Stream<GroupMessageEvent>) -> E): E {
-        return groupHandler.cacheStreamCall(call)
-    }
+    fun <E> cacheStreamCall(call: (Stream<GroupMessageEvent>) -> E): E = groupHandler.cacheStreamCall(call)
 
 }
