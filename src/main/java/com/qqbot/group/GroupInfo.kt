@@ -12,11 +12,11 @@ object GroupInfo {
  * QQ群成员权限
  */
 enum class GroupPermission : Comparable<GroupPermission> {
-    //群员
+    //群员 0
     MEMBER,
-    //群管
+    //群管 1
     ADMIN,
-    //主人
+    //主人 2
     SUPER_OWNER;
 
     val level: Int

@@ -16,10 +16,10 @@ object Info {
     const val CHECK_EVENT_COUNT = 30
 
     //刷屏检测选取的消息时间范围，例如10，则是距最后一条消息10秒内的消息
-    const val CHECK_EVENT_TIME = 8
+    const val CHECK_EVENT_TIME = 10
 
     //刷屏检测判定为刷屏的不重复消息数量
-    const val CHECK_EVENT_COUNT_MAX = 6
+    const val CHECK_EVENT_COUNT_MAX = 7
 
     //刷屏检测判定为刷屏的重复消息数量
     const val CHECK_EVENT_COUNT_MAX1 = 3
@@ -32,9 +32,6 @@ object Info {
 
     //AI数据储存目录
     const val AI_DATA_PATH = "$DATA_ROOT_PATH/ai"
-
-    //摸鱼人日历缓存目录
-    const val CALENDAR_PATH = "$DATA_ROOT_PATH/calendar"
 
     //临时文件目录
     const val TEMP_PATH = "$DATA_ROOT_PATH/temp"

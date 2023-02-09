@@ -329,7 +329,7 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabase) : G
             for (i in groupHandler.botSendEventCache.lastIndex downTo 0) {
                 val event = groupHandler.botSendEventCache[i]
                 try {
-                    event.message.recall()
+                    event.receipt?.recall() ?: continue
                     index++
                 } catch (e: IllegalStateException) {
                 }

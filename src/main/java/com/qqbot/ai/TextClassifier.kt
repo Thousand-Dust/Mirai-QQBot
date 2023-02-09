@@ -46,7 +46,7 @@ class TextClassifier(modelPath: String, val dataPaths: Array<String> = arrayOf()
             it == maxProb
         }
         var label = classifier.getCategory(maxProbIndex)
-        /*if (maxProb < 0.6) {
+        if (maxProb < 0.6) {
             for (probIndex in probs.indices) {
                 val prob = probs[probIndex]
                 if (probIndex != maxProbIndex && prob * 2 >= maxProb) {
@@ -54,10 +54,10 @@ class TextClassifier(modelPath: String, val dataPaths: Array<String> = arrayOf()
                     break
                 }
             }
-        }*/
-        if (maxProb < 0.9) {
+        }
+        if (maxProb < 0.98) {
             //保存结果用于调整模型
-//            saveData(label, formatText)
+            saveData(label, formatText)
         }
         return label
     }

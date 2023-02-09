@@ -29,7 +29,7 @@ suspend fun checkPermission(
         return false
     }
     //检查机器人是否有对目标执行操作的权限
-    if (sender != group.botAsMember && group.botPermission.level <= target.permission.level) {
+    if (target != group.botAsMember && group.botPermission.level <= target.permission.level) {
         if (isSendMsg) {
             group.sendMessage("机器人权限不足")
         }
