@@ -131,7 +131,7 @@ class GroupCheck(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
         val message = event.message
         val lastTime = message.time
 
-        //35秒内连续发送的消息
+        //[Info.CHECK_EVENT_COUNT_MAX] 秒内连续发送的消息
         if (cacheSize() >= Info.CHECK_EVENT_COUNT_MAX) {
             //连续发送的消息数
             var count = 0
@@ -139,7 +139,7 @@ class GroupCheck(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
             for (i in cacheSize() - 1 downTo cacheSize() - Info.CHECK_EVENT_COUNT) {
                 val cache = getCache(i)
                 //同一个人一分钟内发送的消息
-                if (cache.sender.id == senderId && lastTime - cache.time <= 26) {
+                if (cache.sender.id == senderId && lastTime - cache.time <= 25) {
                     count++
                 } else {
                     break
