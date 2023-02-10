@@ -69,30 +69,40 @@ class GroupCheck(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
         val msgStr1 = msgStr.replace(" ", "")
         if (msgStr.length > 128 || msgStr1.isEmpty()) return false
 
-        val label = textClassifier.categorize(msgStr)
+        val result = textClassifier.categorize(msgStr)
+        val label = result.first
+        val score = result.second
         if (!myGroup.botPermission.isOperator() || myGroup.isBotMuted) {
             return false
         }
         when (label) {
             "脏话" -> {
-                /*if (!checkPermission(database, event.group, event.sender, isSendMsg = false)) {
-                  event.message.recall()
-                }*/
+                if (score < 0.9) {
+                    return false
+                }
                 event.group.sendMessage(At(event.sender) + " 请注意言辞！code: 001")
                 return true
             }
-            /*"色情" -> {
-                if (checkPermission(database, event.group, event.sender, isSendMsg = false)) {
-//                  event.message.recall()
+            "色情" -> {
+                if (score < 0.9) {
+                    return false
+                }
+                if (score > 0.95 && checkPermission(database, event.group, event.sender, isSendMsg = false)) {
+                    event.message.recall()
                 }
                 event.group.sendMessage(At(event.sender) + " 请注意言辞！code: 002")
                 return true
-            }*/
-            /*"广告" -> {
+            }
+            "广告" -> {
+                if (score < 0.9) {
+                    return false
+                }
                 if (!checkPermission(database, event.group, event.sender, isSendMsg = false)) return false
-                event.message.recall()
+                if (score > 0.95) {
+                    event.message.recall()
+                }
                 event.group.sendMessage(At(event.sender) + " 禁止打广告！")
-            }*/
+            }
             /*"其他" -> {
                 if (!checkPermission(database, event.group, event.sender, isSendMsg = false)) return false
                 val historyMsg = cacheStreamCall { stream ->

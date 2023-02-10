@@ -33,11 +33,12 @@ class TextClassifier(modelPath: String, val dataPaths: Array<String> = arrayOf()
 
     /**
      * 文本分类
+     * @return 分类结果 Pair<类别, 置信度>
      */
-    fun categorize(text: String): String {
+    fun categorize(text: String): Pair<String, Double> {
         val formatText = participle(text)
         if (formatText.isEmpty()) {
-            return "其他"
+            return Pair("其他", 1.0)
         }
         val probs = classifier.categorize(formatText.split(" ").toTypedArray())
         //获取probs中最大的概率值的索引
@@ -45,8 +46,8 @@ class TextClassifier(modelPath: String, val dataPaths: Array<String> = arrayOf()
         val maxProbIndex = probs.indexOfFirst {
             it == maxProb
         }
-        var label = classifier.getCategory(maxProbIndex)
-        if (maxProb < 0.6) {
+        val label = classifier.getCategory(maxProbIndex)
+        /*if (maxProb < 0.6) {
             for (probIndex in probs.indices) {
                 val prob = probs[probIndex]
                 if (probIndex != maxProbIndex && prob * 2 >= maxProb) {
@@ -54,12 +55,12 @@ class TextClassifier(modelPath: String, val dataPaths: Array<String> = arrayOf()
                     break
                 }
             }
-        }
+        }*/
         if (maxProb < 0.98) {
             //保存结果用于调整模型
             saveData(label, formatText)
         }
-        return label
+        return Pair(label, maxProb)
     }
 
     /**
