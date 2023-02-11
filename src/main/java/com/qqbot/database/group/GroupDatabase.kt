@@ -7,7 +7,7 @@ import java.sql.DriverManager
  * qq群成员 MySql数据库操作
  * @author Thousand-Dust
  */
-class GroupDatabase(private val groupId: Long) {
+class GroupDatabase(private val groupId: Long): GroupDatabaseImpl {
 
     companion object {
         private const val USER_NAME = "qqbot"
@@ -75,14 +75,14 @@ class GroupDatabase(private val groupId: Long) {
     /**
      * 关闭数据库连接，释放资源
      */
-    fun close() {
+    override fun close() {
         connection.close()
     }
 
     /**
      * 插入群成员信息
      */
-    fun addMember(groupMember: MemberData) {
+    override fun addMember(groupMember: MemberData) {
         val sql = "INSERT INTO $TABLE_NAME VALUES (" +
                 "${groupMember.id}, " +
                 "'${groupMember.name}', " +
@@ -99,7 +99,7 @@ class GroupDatabase(private val groupId: Long) {
     /**
      * 删除群成员信息
      */
-    fun delete(id: Long) {
+    override fun delete(id: Long) {
         val sql = "DELETE FROM $TABLE_NAME WHERE $COLUMN_GROUP_ID = ${id};"
         connection.createStatement().execute(sql)
     }
@@ -107,7 +107,7 @@ class GroupDatabase(private val groupId: Long) {
     /**
      * 更新群员信息
      */
-    fun setMember(member: MemberData) {
+    override fun setMember(member: MemberData) {
         val sql = "UPDATE $TABLE_NAME SET " +
                 "$COLUMN_GROUP_NAME = '${member.name}', " +
                 "$COLUMN_SCORE = ${member.score}, " +
@@ -123,7 +123,7 @@ class GroupDatabase(private val groupId: Long) {
     /**
      * 查询群员信息
      */
-    fun getMember(id: Long): MemberData? {
+    override fun getMember(id: Long): MemberData? {
         val sql = "SELECT * FROM $TABLE_NAME WHERE $COLUMN_GROUP_ID = $id"
         val resultSet = connection.createStatement().executeQuery(sql)
         if (resultSet.next()) {
@@ -144,7 +144,7 @@ class GroupDatabase(private val groupId: Long) {
     /**
      * 查询群员积分前十名列表
      */
-    fun getTopTen(): List<MemberData> {
+    override fun getTopTen(): List<MemberData> {
         val sql = "SELECT * FROM $TABLE_NAME ORDER BY $COLUMN_SCORE DESC LIMIT 10"
         val resultSet = connection.createStatement().executeQuery(sql)
         val list = ArrayList<MemberData>(10)
@@ -168,7 +168,7 @@ class GroupDatabase(private val groupId: Long) {
     /**
      * 查询权限为某个值的群员列表
      */
-    fun getPermissions(permission: Int): List<MemberData> {
+    override fun getPermissions(permission: Int): List<MemberData> {
         val sql = "SELECT * FROM $TABLE_NAME WHERE $COLUMN_PERMISSION=$permission"
         val resultSet = connection.createStatement().executeQuery(sql)
         val list = ArrayList<MemberData>()

@@ -77,28 +77,28 @@ class GroupCheck(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
         }
         when (label) {
             "脏话" -> {
-                if (score < 0.9) {
+                if (score < 0.95) {
                     return false
                 }
-                event.group.sendMessage(At(event.sender) + " 请注意言辞！code: 001")
+                event.group.sendMessage(At(event.sender) + " 文明发言，请不要说脏话！")
                 return true
             }
-            "色情" -> {
-                if (score < 0.9) {
+            /*"色情" -> {
+                if (score < 0.95) {
                     return false
                 }
-                if (score > 0.95 && checkPermission(database, event.group, event.sender, isSendMsg = false)) {
+                if (score > 0.98 && checkPermission(database, event.group, event.sender, isSendMsg = false)) {
                     event.message.recall()
                 }
-                event.group.sendMessage(At(event.sender) + " 请注意言辞！code: 002")
+                event.group.sendMessage(At(event.sender) + " 请文明发言！")
                 return true
-            }
+            }*/
             "广告" -> {
-                if (score < 0.9) {
+                if (score < 0.95) {
                     return false
                 }
                 if (!checkPermission(database, event.group, event.sender, isSendMsg = false)) return false
-                if (score > 0.95) {
+                if (score > 0.98) {
                     event.message.recall()
                 }
                 event.group.sendMessage(At(event.sender) + " 禁止打广告！")
