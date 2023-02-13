@@ -3,6 +3,7 @@ package com.qqbot.group
 import com.qqbot.Info
 import com.qqbot.TimeMillisecond
 import com.qqbot.database.group.GroupDatabase
+import com.qqbot.database.group.GroupDatabaseImpl
 import com.qqbot.database.group.MemberData
 import com.qqbot.group.msg.GroupMsgProc
 import com.qqbot.group.msg.proc.*
@@ -21,7 +22,7 @@ import net.mamoe.mirai.message.data.*
 class GroupHandler(myGroup: Group) : GroupEventHandler(myGroup) {
 
     //数据库
-    private val database = GroupDatabase(myGroup.id)
+    private val database: GroupDatabaseImpl = GroupDatabase(myGroup.id)
 
     //协程作用域
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
@@ -31,6 +32,11 @@ class GroupHandler(myGroup: Group) : GroupEventHandler(myGroup) {
 
     //上次发送踢出群通知的时间
     private var lastKickTime = 0L
+
+    //上次报错的时间
+    private var lastErrorTime = 0L
+    //上次报错的类型
+    private var lastErrorType: Class<*>? = null
 
     override fun onCreate(): Boolean {
         //机器人在群里没有管理员权限，只监听群消息检测系统
@@ -104,7 +110,6 @@ class GroupHandler(myGroup: Group) : GroupEventHandler(myGroup) {
                     }
                 }
 
-
                 //处理消息
                 val sender = event.sender
                 var senderData = database.getMember(event.sender.id)
@@ -129,10 +134,12 @@ class GroupHandler(myGroup: Group) : GroupEventHandler(myGroup) {
                 }
 
             } catch (e: Exception) {
-                if (!myGroup.isBotMuted) {
+                if (!myGroup.isBotMuted && System.currentTimeMillis() - lastErrorTime > TimeMillisecond.MINUTE && lastErrorType != e.javaClass) {
                     event.group.sendMessage("错误：$e")
                 }
                 e.printStackTrace()
+                lastErrorTime = System.currentTimeMillis()
+                lastErrorType = e.javaClass
             }
         }
     }

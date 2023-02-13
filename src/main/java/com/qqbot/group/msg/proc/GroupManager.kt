@@ -3,6 +3,7 @@ package com.qqbot.group.msg.proc
 import com.qqbot.Info
 import com.qqbot.TimeMillisecond
 import com.qqbot.database.group.GroupDatabase
+import com.qqbot.database.group.GroupDatabaseImpl
 import com.qqbot.group.GroupEventHandler
 import com.qqbot.group.checkPermission
 import com.qqbot.group.isOperator
@@ -20,7 +21,7 @@ import kotlin.math.min
  * 群管系统
  * @author Thousand-Dust
  */
-class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabase) : GroupMsgProc(groupHandler, database) {
+class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabaseImpl) : GroupMsgProc(groupHandler, database) {
 
     private enum class Command {
         踢,

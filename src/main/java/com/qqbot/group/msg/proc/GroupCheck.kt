@@ -6,6 +6,7 @@ import com.qqbot.TimeSecond
 import com.qqbot.Utils
 import com.qqbot.ai.TextClassifier
 import com.qqbot.database.group.GroupDatabase
+import com.qqbot.database.group.GroupDatabaseImpl
 import com.qqbot.database.group.MemberData
 import com.qqbot.group.GroupEventHandler
 import com.qqbot.group.checkPermission
@@ -21,7 +22,7 @@ import java.util.stream.Collectors
 /**
  * 群消息检测系统
  */
-class GroupCheck(groupHandler: GroupEventHandler, database: GroupDatabase) : GroupMsgProc(groupHandler, database) {
+class GroupCheck(groupHandler: GroupEventHandler, database: GroupDatabaseImpl) : GroupMsgProc(groupHandler, database) {
 
     private val textClassifier = TextClassifier("ai/model.bin")
 
@@ -83,17 +84,17 @@ class GroupCheck(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
                 event.group.sendMessage(At(event.sender) + " 文明发言，请不要说脏话！")
                 return true
             }
-            /*"色情" -> {
-                if (score < 0.95) {
+            "色情" -> {
+                if (score < 0.97) {
                     return false
                 }
-                if (score > 0.98 && checkPermission(database, event.group, event.sender, isSendMsg = false)) {
+                if (score > 0.983 && checkPermission(database, event.group, event.sender, isSendMsg = false)) {
                     event.message.recall()
                 }
                 event.group.sendMessage(At(event.sender) + " 请文明发言！")
                 return true
-            }*/
-            "广告" -> {
+            }
+            /*"广告" -> {
                 if (score < 0.95) {
                     return false
                 }
@@ -102,7 +103,7 @@ class GroupCheck(groupHandler: GroupEventHandler, database: GroupDatabase) : Gro
                     event.message.recall()
                 }
                 event.group.sendMessage(At(event.sender) + " 禁止打广告！")
-            }
+            }*/
             /*"其他" -> {
                 if (!checkPermission(database, event.group, event.sender, isSendMsg = false)) return false
                 val historyMsg = cacheStreamCall { stream ->

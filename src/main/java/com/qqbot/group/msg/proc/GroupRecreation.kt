@@ -10,6 +10,7 @@ import com.qqbot.api.QWeather
 import com.qqbot.api.QWeatherCode
 import com.qqbot.api.sogouTextToAudio
 import com.qqbot.database.group.GroupDatabase
+import com.qqbot.database.group.GroupDatabaseImpl
 import com.qqbot.group.GroupHandler
 import com.qqbot.group.msg.GroupMsgProc
 import kotlinx.coroutines.Dispatchers
@@ -25,7 +26,7 @@ import java.io.File
 import java.io.IOException
 import java.util.regex.Pattern
 
-class GroupRecreation(groupHandler: GroupHandler, database: GroupDatabase) : GroupMsgProc(groupHandler, database) {
+class GroupRecreation(groupHandler: GroupHandler, database: GroupDatabaseImpl) : GroupMsgProc(groupHandler, database) {
 
     companion object {
         //摸鱼人日历图片储存路径

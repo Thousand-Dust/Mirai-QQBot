@@ -1,6 +1,14 @@
 package com.qqbot.ai
 
 /**
+ * 将@的QQ号删除
+ */
+fun String.removeAt(): String {
+    //正咋表达式替换@和后面的6位以上数字
+    return this.replace("@\\d{6,}".toRegex(), "")
+}
+
+/**
  * 将字符串格式化成文本分类器需要的格式
  */
 fun String.formatForClassifier(): String {
