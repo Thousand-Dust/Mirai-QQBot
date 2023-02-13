@@ -2,6 +2,7 @@ package com.qqbot.group.msg.proc
 
 import com.qqbot.*
 import com.qqbot.database.group.GroupDatabase
+import com.qqbot.database.group.GroupDatabaseImpl
 import com.qqbot.database.group.MemberData
 import com.qqbot.group.GroupEventHandler
 import com.qqbot.group.checkPermission
@@ -22,7 +23,7 @@ import kotlin.random.Random
  * 积分系统
  * @author Thousand-Dust
  */
-class GroupScore(groupHandler: GroupEventHandler, database: GroupDatabase) : GroupMsgProc(groupHandler, database) {
+class GroupScore(groupHandler: GroupEventHandler, database: GroupDatabaseImpl) : GroupMsgProc(groupHandler, database) {
 
     private enum class Command {
         签到,

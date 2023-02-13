@@ -1,6 +1,7 @@
 package com.qqbot.group.msg.proc
 
 import com.qqbot.database.group.GroupDatabase
+import com.qqbot.database.group.GroupDatabaseImpl
 import com.qqbot.group.GroupHandler
 import com.qqbot.group.msg.GroupMsgProc
 import net.mamoe.mirai.event.events.GroupMessageEvent
@@ -10,7 +11,7 @@ import net.mamoe.mirai.event.events.MessagePreSendEvent
 /**
  * 群 主人系统
  */
-class GroupMaster(groupHandler: GroupHandler, database: GroupDatabase) : GroupMsgProc(groupHandler, database) {
+class GroupMaster(groupHandler: GroupHandler, database: GroupDatabaseImpl) : GroupMsgProc(groupHandler, database) {
 
     private enum class Command {
         开机,

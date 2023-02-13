@@ -1,6 +1,7 @@
 package com.qqbot.ai
 
 import com.qqbot.Utils
+import opennlp.tools.cmdline.doccat.DoccatFineGrainedReportListener
 import opennlp.tools.doccat.*
 import opennlp.tools.ml.AbstractEventTrainer
 import opennlp.tools.ml.maxent.GISTrainer
@@ -29,6 +30,17 @@ class TextClassifier(modelPath: String, val dataPaths: Array<String> = arrayOf()
     init {
         val model = loadModel(modelPath)
         classifier = DocumentCategorizerME(model)
+        //评估模型
+//        val evaluator = DocumentCategorizerEvaluator(DocumentCategorizerME(model), DoccatFineGrainedReportListener())
+//        // 准备训练数据
+//        var dataIn: InputStream = FileInputStream(dataPaths[0])
+//        for (i in 1 until dataPaths.size) {
+//            dataIn = SequenceInputStream(dataIn, FileInputStream(dataPaths[i]))
+//        }
+//        val lineStream: ObjectStream<String> = PlainTextByLineStream({ dataIn }, "UTF-8")
+//        val sampleStream: ObjectStream<DocumentSample> = DocumentSampleStream(lineStream)
+//        evaluator.evaluate(sampleStream)
+//        println("正确率："+ evaluator.accuracy)
     }
 
     /**
@@ -36,7 +48,7 @@ class TextClassifier(modelPath: String, val dataPaths: Array<String> = arrayOf()
      * @return 分类结果 Pair<类别, 置信度>
      */
     fun categorize(text: String): Pair<String, Double> {
-        val formatText = participle(text)
+        val formatText = participle(text.removeAt())
         if (formatText.isEmpty()) {
             return Pair("其他", 1.0)
         }
@@ -56,7 +68,7 @@ class TextClassifier(modelPath: String, val dataPaths: Array<String> = arrayOf()
                 }
             }
         }*/
-        if (maxProb < 0.96) {
+        if (maxProb < 0.99) {
             //保存结果用于调整模型
             saveData(label, formatText)
         }
@@ -131,6 +143,12 @@ class TextClassifier(modelPath: String, val dataPaths: Array<String> = arrayOf()
         sampleStream.close()
         lineStream.close()
         dataIn.close()
+
+        //评估模型
+        val evaluator = DocumentCategorizerEvaluator(DocumentCategorizerME(model), DoccatFineGrainedReportListener())
+        evaluator.evaluate(sampleStream)
+        println("正确率："+ evaluator.accuracy)
+
         return model
     }
 

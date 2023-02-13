@@ -1,6 +1,7 @@
 package com.qqbot.group.msg
 
 import com.qqbot.database.group.GroupDatabase
+import com.qqbot.database.group.GroupDatabaseImpl
 import com.qqbot.group.GroupEventHandler
 import net.mamoe.mirai.event.events.GroupMessageEvent
 import java.util.stream.Stream
@@ -9,7 +10,7 @@ import java.util.stream.Stream
  * 群消息处理器，每个群单独一个实例
  * @author Thousand-Dust
  */
-abstract class GroupMsgProc(protected val groupHandler: GroupEventHandler, protected val database: GroupDatabase) {
+abstract class GroupMsgProc(protected val groupHandler: GroupEventHandler, protected val database: GroupDatabaseImpl) {
 
     protected val myGroup = groupHandler.myGroup
 

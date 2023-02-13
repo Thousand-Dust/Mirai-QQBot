@@ -1,6 +1,7 @@
 package com.qqbot.group
 
 import com.qqbot.database.group.GroupDatabase
+import com.qqbot.database.group.GroupDatabaseImpl
 import com.qqbot.database.group.MemberData
 import net.mamoe.mirai.contact.*
 
@@ -16,7 +17,7 @@ import net.mamoe.mirai.contact.*
  * @return 机器人是否有权限可以执行操作
  */
 suspend fun checkPermission(
-    database: GroupDatabase,
+    database: GroupDatabaseImpl,
     group: Group,
     target: Member,
     sender: Member? = null,

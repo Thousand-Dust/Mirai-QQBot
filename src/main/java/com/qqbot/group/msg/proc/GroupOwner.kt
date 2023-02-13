@@ -2,6 +2,7 @@ package com.qqbot.group.msg.proc
 
 import com.qqbot.Info
 import com.qqbot.database.group.GroupDatabase
+import com.qqbot.database.group.GroupDatabaseImpl
 import com.qqbot.database.group.MemberData
 import com.qqbot.group.GroupEventHandler
 import com.qqbot.group.GroupPermission
@@ -17,7 +18,7 @@ import net.mamoe.mirai.message.data.SingleMessage
  * 群主系统
  * @author Thousand-Dust
  */
-class GroupOwner(groupHandler: GroupEventHandler, database: GroupDatabase) : GroupMsgProc(groupHandler, database) {
+class GroupOwner(groupHandler: GroupEventHandler, database: GroupDatabaseImpl) : GroupMsgProc(groupHandler, database) {
 
     private enum class Command {
         添加群管,
