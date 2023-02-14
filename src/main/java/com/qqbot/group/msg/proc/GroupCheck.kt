@@ -78,32 +78,32 @@ class GroupCheck(groupHandler: GroupEventHandler, database: GroupDatabaseImpl) :
         }
         when (label) {
             "脏话" -> {
-                if (score < 0.95) {
+                if (score < 0.96) {
                     return false
                 }
                 event.group.sendMessage(At(event.sender) + " 文明发言，请不要说脏话！")
                 return true
             }
             "色情" -> {
-                if (score < 0.97) {
+                if (score < 0.98) {
                     return false
                 }
-                if (score > 0.983 && checkPermission(database, event.group, event.sender, isSendMsg = false)) {
+                if (score > 0.99 && checkPermission(database, event.group, event.sender, isSendMsg = false)) {
                     event.message.recall()
                 }
                 event.group.sendMessage(At(event.sender) + " 请文明发言！")
                 return true
             }
-            /*"广告" -> {
-                if (score < 0.95) {
+            "广告" -> {
+                if (score < 0.98) {
                     return false
                 }
                 if (!checkPermission(database, event.group, event.sender, isSendMsg = false)) return false
-                if (score > 0.98) {
+                if (score > 0.99) {
                     event.message.recall()
                 }
                 event.group.sendMessage(At(event.sender) + " 禁止打广告！")
-            }*/
+            }
             /*"其他" -> {
                 if (!checkPermission(database, event.group, event.sender, isSendMsg = false)) return false
                 val historyMsg = cacheStreamCall { stream ->

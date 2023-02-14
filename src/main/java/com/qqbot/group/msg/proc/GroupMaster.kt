@@ -1,5 +1,6 @@
 package com.qqbot.group.msg.proc
 
+import com.qqbot.Info
 import com.qqbot.database.group.GroupDatabase
 import com.qqbot.database.group.GroupDatabaseImpl
 import com.qqbot.group.GroupHandler
@@ -20,7 +21,7 @@ class GroupMaster(groupHandler: GroupHandler, database: GroupDatabaseImpl) : Gro
     }
 
     override suspend fun process(event: GroupMessageEvent): Boolean {
-        return false
+        return command(event)
     }
 
     override fun getName(): String {
@@ -36,6 +37,22 @@ class GroupMaster(groupHandler: GroupHandler, database: GroupDatabaseImpl) : Gro
     }
 
     private fun command(event: GroupMessageEvent): Boolean {
+        if (event.sender.id != Info.RootManagerId) {
+            return false
+        }
+        val message = event.message
+
+        if (message.size == 2) {
+            val commandMessage = message[0]
+            when (commandMessage.contentToString()) {
+                Command.开机.name -> {
+                }
+                Command.关机.name -> {
+                }
+                Command.加积分.name -> {
+                }
+            }
+        }
         return false
     }
 
