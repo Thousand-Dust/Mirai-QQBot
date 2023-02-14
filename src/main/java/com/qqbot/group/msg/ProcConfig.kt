@@ -2,6 +2,8 @@ package com.qqbot.group.msg
 
 import com.qqbot.Info
 
+
+
 /**
  * 群消息处理器系统配置的封装
  */
