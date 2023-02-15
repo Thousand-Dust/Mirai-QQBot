@@ -7,31 +7,54 @@ import java.sql.DriverManager
  * qq群成员 MySql数据库操作
  * @author Thousand-Dust
  */
-class GroupDatabase(private val groupId: Long): GroupDatabaseImpl {
+class GroupDatabase(private val groupId: Long) : GroupDatabaseImpl {
 
     companion object {
         private const val USER_NAME = "qqbot"
         private const val PASSWORD = "QQBot-tdzn123"
         private const val DATABASE_NAME = "qqbot_5517"
 
-        private val connection: Connection
+        private const val url = "jdbc:mysql://localhost:3306/$DATABASE_NAME?useUnicode=true&characterEncoding=utf-8&useSSL=false"
+
+        private var connection: Connection
+            get() {
+                if (field.isClosed) {
+                    println("数据库连接已关闭，正在重新连接")
+                    try {
+                        //连接数据库
+                        field = DriverManager.getConnection(url, USER_NAME, PASSWORD)
+                        println("数据库重新连接成功")
+                    } catch (e: Exception) {
+                        println("重新连接数据库失败")
+                        throw e
+                    }
+                }
+                return field
+            }
 
         private const val TABLE_VERSION = 1000
 
         //群成员id 即qq号
         private const val COLUMN_GROUP_ID = "id"
+
         //群成员昵称
         private const val COLUMN_GROUP_NAME = "name"
+
         //群成员积分
         private const val COLUMN_SCORE = "score"
+
         //群成员上一次签到时间
         private const val COLUMN_LAST_SIGN_TIME = "lastSignTime"
+
         //群成员连续签到次数
         private const val COLUMN_CONTINUE_SIGN_COUNT = "continueSignCount"
+
         //群成员上一次违规被禁言时间
         private const val COLUMN_LAST_VIOLATION_TIME = "lastViolationTime"
+
         //群成员违规被禁言次数
         private const val COLUMN_VIOLATION_COUNT = "violationCount"
+
         //群成员权限
         private const val COLUMN_PERMISSION = "permission"
 
@@ -43,9 +66,8 @@ class GroupDatabase(private val groupId: Long): GroupDatabaseImpl {
                 println("加载驱动失败")
                 throw e
             }
-            try {//连接数据库
-                val url =
-                    "jdbc:mysql://localhost:3306/$DATABASE_NAME?useUnicode=true&characterEncoding=utf-8&useSSL=false"
+            try {
+                //连接数据库
                 connection = DriverManager.getConnection(url, USER_NAME, PASSWORD)
             } catch (e: Exception) {
                 println("连接数据库失败")
