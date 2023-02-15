@@ -23,24 +23,14 @@ import java.util.*
 class TextClassifier(modelPath: String, val dataPaths: Array<String> = arrayOf()) {
 
     // 使用训练过的分类器预测句子的类别
+    private var model: DoccatModel
     private var classifier: DocumentCategorizerME
     // 分词器
     private val anal = IKAnalyzer(true)
 
     init {
-        val model = loadModel(modelPath)
+        model = loadModel(modelPath)
         classifier = DocumentCategorizerME(model)
-        //评估模型
-//        val evaluator = DocumentCategorizerEvaluator(DocumentCategorizerME(model), DoccatFineGrainedReportListener())
-//        // 准备训练数据
-//        var dataIn: InputStream = FileInputStream(dataPaths[0])
-//        for (i in 1 until dataPaths.size) {
-//            dataIn = SequenceInputStream(dataIn, FileInputStream(dataPaths[i]))
-//        }
-//        val lineStream: ObjectStream<String> = PlainTextByLineStream({ dataIn }, "UTF-8")
-//        val sampleStream: ObjectStream<DocumentSample> = DocumentSampleStream(lineStream)
-//        evaluator.evaluate(sampleStream)
-//        println("正确率："+ evaluator.accuracy)
     }
 
     /**
@@ -70,7 +60,7 @@ class TextClassifier(modelPath: String, val dataPaths: Array<String> = arrayOf()
         }*/
         if (maxProb < 0.99) {
             //保存结果用于调整模型
-//            saveData(label, formatText)
+            saveData(label, formatText)
         }
         return Pair(label, maxProb)
     }
@@ -144,12 +134,24 @@ class TextClassifier(modelPath: String, val dataPaths: Array<String> = arrayOf()
         lineStream.close()
         dataIn.close()
 
+        return model
+    }
+
+    /**
+     * 评估模型
+     */
+    fun getAccuracy(): Double {
         //评估模型
         val evaluator = DocumentCategorizerEvaluator(DocumentCategorizerME(model), DoccatFineGrainedReportListener())
+        // 准备训练数据
+        var dataIn: InputStream = FileInputStream(dataPaths[0])
+        for (i in 1 until dataPaths.size) {
+            dataIn = SequenceInputStream(dataIn, FileInputStream(dataPaths[i]))
+        }
+        val lineStream: ObjectStream<String> = PlainTextByLineStream({ dataIn }, "UTF-8")
+        val sampleStream: ObjectStream<DocumentSample> = DocumentSampleStream(lineStream)
         evaluator.evaluate(sampleStream)
-        println("正确率："+ evaluator.accuracy)
-
-        return model
+        return evaluator.accuracy
     }
 
     /**
@@ -162,8 +164,7 @@ class TextClassifier(modelPath: String, val dataPaths: Array<String> = arrayOf()
             drillModel(dataPaths, fileName)
         }
         // 读取训练数据
-        val dataIn: InputStream = FileInputStream(file.path)
-        return DoccatModel(dataIn)
+        return DoccatModel(file)
     }
 
 }

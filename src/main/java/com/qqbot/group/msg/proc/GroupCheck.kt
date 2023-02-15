@@ -26,6 +26,10 @@ class GroupCheck(groupHandler: GroupEventHandler, database: GroupDatabaseImpl) :
 
     private val textClassifier = TextClassifier("ai/model.bin")
 
+    init {
+        println("文本分类模型准确率为：${textClassifier.getAccuracy()}")
+    }
+
     override suspend fun process(event: GroupMessageEvent): Boolean {
         if (myGroup.isBotMuted) {
             checkDirtyWord(event)
