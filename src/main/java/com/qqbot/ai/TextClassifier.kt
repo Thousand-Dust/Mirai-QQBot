@@ -23,15 +23,15 @@ import java.util.*
 class TextClassifier(modelPath: String, val dataPaths: Array<String> = arrayOf()) {
 
     // 使用训练过的分类器预测句子的类别
-    private var model: DoccatModel
-    private var classifier: DocumentCategorizerME
+    var model: DoccatModel = loadModel(modelPath)
+        set(value) {
+            field = value
+            classifier = DocumentCategorizerME(value)
+        }
+    private var classifier: DocumentCategorizerME = DocumentCategorizerME(model)
+
     // 分词器
     private val anal = IKAnalyzer(true)
-
-    init {
-        model = loadModel(modelPath)
-        classifier = DocumentCategorizerME(model)
-    }
 
     /**
      * 文本分类
@@ -58,7 +58,7 @@ class TextClassifier(modelPath: String, val dataPaths: Array<String> = arrayOf()
                 }
             }
         }*/
-        if (maxProb < 0.99) {
+        if (label != "聊天" || maxProb < 0.99) {
             //保存结果用于调整模型
             saveData(label, formatText)
         }
@@ -141,6 +141,9 @@ class TextClassifier(modelPath: String, val dataPaths: Array<String> = arrayOf()
      * 评估模型
      */
     fun getAccuracy(): Double {
+        if (dataPaths.isEmpty()) {
+            throw IllegalArgumentException("No training files")
+        }
         //评估模型
         val evaluator = DocumentCategorizerEvaluator(DocumentCategorizerME(model), DoccatFineGrainedReportListener())
         // 准备训练数据
@@ -151,7 +154,13 @@ class TextClassifier(modelPath: String, val dataPaths: Array<String> = arrayOf()
         val lineStream: ObjectStream<String> = PlainTextByLineStream({ dataIn }, "UTF-8")
         val sampleStream: ObjectStream<DocumentSample> = DocumentSampleStream(lineStream)
         evaluator.evaluate(sampleStream)
-        return evaluator.accuracy
+        val result = evaluator.accuracy
+
+        sampleStream.close()
+        lineStream.close()
+        dataIn.close()
+
+        return result
     }
 
     /**

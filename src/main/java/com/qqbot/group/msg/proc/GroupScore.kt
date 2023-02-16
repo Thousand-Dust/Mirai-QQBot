@@ -1,7 +1,6 @@
 package com.qqbot.group.msg.proc
 
 import com.qqbot.*
-import com.qqbot.database.group.GroupDatabase
 import com.qqbot.database.group.GroupDatabaseImpl
 import com.qqbot.database.group.MemberData
 import com.qqbot.group.GroupEventHandler
@@ -108,13 +107,12 @@ class GroupScore(groupHandler: GroupEventHandler, database: GroupDatabaseImpl) :
 
         //必须群主或管理，且消息是纯文本开头
         if (commandMessage is PlainText) {
-            val group = event.group
             val sender = event.sender
             //识别命令
             if (message.size == 2) {
                 when (commandMessage.toString()) {
                     Command.签到.name -> {
-                        return sign(sender, group)
+                        return sign(sender)
                     }
                     Command.我的积分.name -> {
                         val memberData = database.getMember(sender.id)
@@ -126,7 +124,7 @@ class GroupScore(groupHandler: GroupEventHandler, database: GroupDatabaseImpl) :
                         return true
                     }
                     Command.积分排行榜.name -> {
-                        return scoreRanking(group)
+                        return scoreRanking()
                     }
                     /*Command.抢劫规则.name -> {
                         return robRule(group)
@@ -137,16 +135,16 @@ class GroupScore(groupHandler: GroupEventHandler, database: GroupDatabaseImpl) :
             if (message.size >= 3) {
                 when (commandMessage.toString()) {
                     Command.转账.name -> {
-                        return scoreTransfer(message[2], message[3], sender, group)
+                        return scoreTransfer(message[2], message[3], sender)
                     }
                     Command.kban.name -> {
-                        return scoreMute(message[2], message[3], sender, event.group)
+                        return scoreMute(message[2], message[3], sender)
                     }
                     Command.kj.name -> {
-                        return scoreUnmute(message[2], sender, event.group)
+                        return scoreUnmute(message[2], sender)
                     }
                     /*Command.抢劫.name -> {
-                        return scoreRob(sender, message[2], message[3], event.group)
+                        return scoreRob(sender, message[2], message[3])
                     }*/
                 }
                 return false
@@ -159,7 +157,7 @@ class GroupScore(groupHandler: GroupEventHandler, database: GroupDatabaseImpl) :
     /**
      * 签到
      */
-    private suspend fun sign(sender: Member, group: Group): Boolean {
+    private suspend fun sign(sender: Member): Boolean {
         //生成随机数位签到的积分
         val now = System.currentTimeMillis()
         val memberData = database.getMember(sender.id)
@@ -169,7 +167,7 @@ class GroupScore(groupHandler: GroupEventHandler, database: GroupDatabaseImpl) :
             database.addMember(
                 MemberData(sender.id, sender.nameCardOrNick, 50, now, 1)
             )
-            group.sendMessage("签到成功，首次签到获得50积分！")
+            myGroup.sendMessage("签到成功，首次签到获得50积分！")
             return true
         }
         if (memberData.lastSignTime == 0L) {
@@ -177,7 +175,7 @@ class GroupScore(groupHandler: GroupEventHandler, database: GroupDatabaseImpl) :
             memberData.continueSignCount = 1
             memberData.score += 50
             database.setMember(memberData)
-            group.sendMessage("签到成功，首次签到获得50积分！")
+            myGroup.sendMessage("签到成功，首次签到获得50积分！")
             return true
         }
 
@@ -190,7 +188,7 @@ class GroupScore(groupHandler: GroupEventHandler, database: GroupDatabaseImpl) :
         val lastZero = Utils.getDayTime(calendar)
         //判断是否是同一天
         if (lastZero == todayZero) {
-            group.sendMessage(At(sender.id) + "今天已经签到过了！")
+            myGroup.sendMessage(At(sender.id) + "今天已经签到过了！")
         } else {
             //判断上次的0点+24小时等于今天的0点
             var isReset = false
@@ -217,7 +215,7 @@ class GroupScore(groupHandler: GroupEventHandler, database: GroupDatabaseImpl) :
                 memberData.score += 20
             }
             database.setMember(memberData)
-            group.sendMessage(msg)
+            myGroup.sendMessage(msg)
         }
         return true
     }
@@ -228,14 +226,13 @@ class GroupScore(groupHandler: GroupEventHandler, database: GroupDatabaseImpl) :
     private suspend fun scoreTransfer(
         targetMessage: SingleMessage,
         scoreMessage: SingleMessage,
-        sender: Member,
-        group: Group
+        sender: Member
     ): Boolean {
         val targetId = if (targetMessage is At) targetMessage.target else return false
         //被转账对象
-        val target = group[targetId]
+        val target = myGroup[targetId]
         if (target == null) {
-            group.sendMessage("群成员不存在")
+            myGroup.sendMessage("群成员不存在")
             return false
         }
         if (scoreMessage !is PlainText) {
@@ -244,22 +241,22 @@ class GroupScore(groupHandler: GroupEventHandler, database: GroupDatabaseImpl) :
         val scoreMessageStr = scoreMessage.toString().replace(" ", "")
         val score = scoreMessageStr.toIntOrNull()
         if (score == null) {
-            group.sendMessage("积分格式错误")
+            myGroup.sendMessage("积分格式错误")
             return true
         }
         if (score <= 0) {
-            group.sendMessage("积分必须大于0")
+            myGroup.sendMessage("积分必须大于0")
             return true
         }
         val senderData = database.getMember(sender.id)
         if (senderData == null) {
-            group.sendMessage("你还没有积分哦！")
+            myGroup.sendMessage("你还没有积分哦！")
             return true
         }
         //需要扣除的积分
         val needScore = (score * 1.15).toInt()
         if (senderData.score < needScore) {
-            group.sendMessage("你的积分不足，需要${needScore}积分，其中额外扣除的积分为${(score * 0.15).toInt()}")
+            myGroup.sendMessage("你的积分不足，需要${needScore}积分，其中额外扣除的积分为${(score * 0.15).toInt()}")
             return true
         }
         //扣除转账人积分
@@ -273,15 +270,15 @@ class GroupScore(groupHandler: GroupEventHandler, database: GroupDatabaseImpl) :
             targetData.score += score
             database.setMember(targetData)
         }
-        group.sendMessage("转账成功，额外扣除积分${(score * 0.15).toInt()}")
+        myGroup.sendMessage("转账成功，额外扣除积分${(score * 0.15).toInt()}")
         return true
     }
 
     /**
      * 抢劫规则
      */
-    private suspend fun robRule(group: Group): Boolean {
-        group.sendMessage(
+    private suspend fun robRule(): Boolean {
+        myGroup.sendMessage(
             "积分抢劫，成功率为45%\n" +
                     "如果成功，抢劫者获得抢劫积分，并被禁言抢劫积分的0.1分钟\n" +
                     "如果失败，被抢劫者扣除抢劫的积分，并被禁言抢劫积分的0.1分钟\n" +
@@ -306,19 +303,18 @@ class GroupScore(groupHandler: GroupEventHandler, database: GroupDatabaseImpl) :
      * @param sender 抢劫者
      * @param targetMessage 被抢劫者
      * @param scoreMessage 抢劫积分
-     * @param group 群
+     * @param myGroup 群
      */
     private suspend fun scoreRob(
         sender: Member,
         targetMessage: SingleMessage,
-        scoreMessage: SingleMessage,
-        group: Group
+        scoreMessage: SingleMessage
     ): Boolean {
         val targetId = if (targetMessage is At) targetMessage.target else return false
         //被抢劫对象
-        val member = group[targetId]
+        val member = myGroup[targetId]
         if (member == null) {
-            group.sendMessage("群成员不存在")
+            myGroup.sendMessage("群成员不存在")
             return false
         }
         if (scoreMessage !is PlainText) {
@@ -327,37 +323,37 @@ class GroupScore(groupHandler: GroupEventHandler, database: GroupDatabaseImpl) :
         val scoreMessageStr = scoreMessage.toString().replace(" ", "")
         val score = scoreMessageStr.toIntOrNull()
         if (score == null) {
-            group.sendMessage("积分格式错误")
+            myGroup.sendMessage("积分格式错误")
             return true
         }
         if (score <= 0) {
-            group.sendMessage("积分必须大于0")
+            myGroup.sendMessage("积分必须大于0")
             return true
         }
         val senderData = database.getMember(sender.id)
         if (senderData == null) {
-            group.sendMessage("你还没有积分哦！")
+            myGroup.sendMessage("你还没有积分哦！")
             return true
         }
         val targetData = database.getMember(member.id)
         if (targetData == null) {
-            group.sendMessage("对方还没有积分哦！")
+            myGroup.sendMessage("对方还没有积分哦！")
             return true
         }
         if (senderData.score < score * 3) {
-            group.sendMessage("你的积分不足，需要${score * 3}积分")
+            myGroup.sendMessage("你的积分不足，需要${score * 3}积分")
             return true
         }
         if (targetData.score < 200 || senderData.score < 200) {
-            group.sendMessage("你或对方积分少于200不可抢劫")
+            myGroup.sendMessage("你或对方积分少于200不可抢劫")
             return true
         }
         if (score > targetData.score * 0.1) {
-            group.sendMessage("最多只可抢劫对方的积分的10%")
+            myGroup.sendMessage("最多只可抢劫对方的积分的10%")
             return true
         }
         if (score < 10) {
-            group.sendMessage("最少抢劫10积分")
+            myGroup.sendMessage("最少抢劫10积分")
             return true
         }
         val success = if (senderData.score > targetData.score * 1.5) {
@@ -371,7 +367,7 @@ class GroupScore(groupHandler: GroupEventHandler, database: GroupDatabaseImpl) :
             targetData.score -= score
             database.setMember(senderData)
             database.setMember(targetData)
-            group.sendMessage("抢劫成功，你获得了${score}积分。并被警察关进了监狱")
+            myGroup.sendMessage("抢劫成功，你获得了${score}积分。并被警察关进了监狱")
             sender.mute(max(5, (score * 0.1).toInt()) * TimeSecond.MINUTE)
         } else {
             //抢劫失败
@@ -379,7 +375,7 @@ class GroupScore(groupHandler: GroupEventHandler, database: GroupDatabaseImpl) :
             targetData.score += score
             database.setMember(senderData)
             database.setMember(targetData)
-            group.sendMessage("抢劫失败，你失去了${score}积分。并被警察关进了监狱")
+            myGroup.sendMessage("抢劫失败，你失去了${score}积分。并被警察关进了监狱")
             sender.mute(max(5, (score * 0.1).toInt()) * TimeSecond.MINUTE)
         }
         return true
@@ -388,10 +384,10 @@ class GroupScore(groupHandler: GroupEventHandler, database: GroupDatabaseImpl) :
     /**
      * 积分排行榜
      */
-    private suspend fun scoreRanking(group: Group): Boolean {
+    private suspend fun scoreRanking(): Boolean {
         val memberDataList = database.getTopTen()
         if (memberDataList.isEmpty()) {
-            group.sendMessage("暂无积分数据")
+            myGroup.sendMessage("暂无积分数据")
         } else {
             val stringBuilder = StringBuilder("积分排行榜：\n")
             //找出重复的名字
@@ -419,7 +415,7 @@ class GroupScore(groupHandler: GroupEventHandler, database: GroupDatabaseImpl) :
                     .append(memberData.score)
                     .append("\n")
             }
-            group.sendMessage(stringBuilder.toString())
+            myGroup.sendMessage(stringBuilder.toString())
         }
         return true
     }
@@ -432,24 +428,23 @@ class GroupScore(groupHandler: GroupEventHandler, database: GroupDatabaseImpl) :
     private suspend fun scoreMute(
         targetMessage: SingleMessage,
         timeMessage: SingleMessage,
-        sender: Member,
-        group: Group
+        sender: Member
     ): Boolean {
         val targetId = if (targetMessage is At) targetMessage.target else return false
-        val target = group[targetId]
+        val target = myGroup[targetId]
         if (target == null) {
-            group.sendMessage("群成员不存在")
+            myGroup.sendMessage("群成员不存在")
             return false
         }
         if (timeMessage !is PlainText) {
             return false
         }
         //检查权限
-        if (!checkPermission(database, group, target, sender)) {
+        if (!checkPermission(database, myGroup, target, sender)) {
             return false
         }
         if (target.muteTimeRemaining > 0) {
-            group.sendMessage("该成员已被禁言，请解禁后再操作！")
+            myGroup.sendMessage("该成员已被禁言，请解禁后再操作！")
             return true
         }
         val timeMessageStr = timeMessage.toString().lowercase(Locale.getDefault()).replace(" ", "")
@@ -477,17 +472,17 @@ class GroupScore(groupHandler: GroupEventHandler, database: GroupDatabaseImpl) :
             }
 
             else -> {
-                group.sendMessage("时间单位错误，可选单位：秒(s) 分(m) 时(h)")
+                myGroup.sendMessage("时间单位错误，可选单位：秒(s) 分(m) 时(h)")
                 return true
             }
         }
 
         if (seconds < 30) {
-            group.sendMessage("你太快了，最少要30秒哦！")
+            myGroup.sendMessage("你太快了，最少要30秒哦！")
             return true
         }
         if (seconds > TimeSecond.HOUR) {
-            group.sendMessage("最多只能禁言1小时哦！")
+            myGroup.sendMessage("最多只能禁言1小时哦！")
             return true
         }
 
@@ -497,7 +492,7 @@ class GroupScore(groupHandler: GroupEventHandler, database: GroupDatabaseImpl) :
         val senderData = database.getMember(sender.id)
         //判断积分是否足够
         if (senderData == null || senderData.score < score) {
-            group.sendMessage("积分不足，需要积分：$score")
+            myGroup.sendMessage("积分不足，需要积分：$score")
             return true
         }
         //扣除积分
@@ -507,7 +502,7 @@ class GroupScore(groupHandler: GroupEventHandler, database: GroupDatabaseImpl) :
         //禁言
         target.mute(seconds)
 
-        group.sendMessage("禁言成功，消耗积分：$score")
+        myGroup.sendMessage("禁言成功，消耗积分：$score")
         return true
     }
 
@@ -515,15 +510,15 @@ class GroupScore(groupHandler: GroupEventHandler, database: GroupDatabaseImpl) :
      * 积分解禁
      * @param targetMessage 目标群成员 [SingleMessage] (@群成员)
      */
-    private suspend fun scoreUnmute(targetMessage: SingleMessage, sender: Member, group: Group): Boolean {
+    private suspend fun scoreUnmute(targetMessage: SingleMessage, sender: Member): Boolean {
         val targetId = if (targetMessage is At) targetMessage.target else return false
-        val target = group[targetId]
+        val target = myGroup[targetId]
         if (target == null) {
-            group.sendMessage("群成员不存在")
+            myGroup.sendMessage("群成员不存在")
             return false
         }
         //检查权限
-        if (!checkPermission(database, group, target, sender)) {
+        if (!checkPermission(database, myGroup, target, sender)) {
             return false
         }
 
@@ -533,14 +528,14 @@ class GroupScore(groupHandler: GroupEventHandler, database: GroupDatabaseImpl) :
         //计算消耗的积分
         val score = muteTime / 6
         if (score < 1) {
-            group.sendMessage("该成员未被禁言")
+            myGroup.sendMessage("该成员未被禁言")
             return true
         }
         //查询积分
         val senderData = database.getMember(sender.id)
         //判断积分是否足够
         if (senderData == null || senderData.score < score) {
-            group.sendMessage("对方被禁言时间剩余：${timeFormat(muteTime * TimeMillisecond.SECOND)}，需要消耗积分：${score}。积分不足")
+            myGroup.sendMessage("对方被禁言时间剩余：${timeFormat(muteTime * TimeMillisecond.SECOND)}，需要消耗积分：${score}。积分不足")
             return true
         }
         //禁言
@@ -550,7 +545,7 @@ class GroupScore(groupHandler: GroupEventHandler, database: GroupDatabaseImpl) :
         senderData.score -= score
         database.setMember(senderData)
 
-        group.sendMessage("解禁成功，消耗积分：$score")
+        myGroup.sendMessage("解禁成功，消耗积分：$score")
         return true
     }
 

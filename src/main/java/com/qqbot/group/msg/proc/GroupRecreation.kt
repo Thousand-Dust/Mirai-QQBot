@@ -9,7 +9,6 @@ import com.qqbot.Utils
 import com.qqbot.api.QWeather
 import com.qqbot.api.QWeatherCode
 import com.qqbot.api.sogouTextToAudio
-import com.qqbot.database.group.GroupDatabase
 import com.qqbot.database.group.GroupDatabaseImpl
 import com.qqbot.group.GroupHandler
 import com.qqbot.group.msg.GroupMsgProc
@@ -154,7 +153,7 @@ class GroupRecreation(groupHandler: GroupHandler, database: GroupDatabaseImpl) :
         if (message.size == 2) {
             when (commandMessage.toString()) {
                 Command.摸鱼人日历.name -> {
-                    fishCalendar(event.group)
+                    fishCalendar()
                     return true
                 }
                 else -> {
@@ -162,16 +161,16 @@ class GroupRecreation(groupHandler: GroupHandler, database: GroupDatabaseImpl) :
                     val splitMsg = msgStr.split(Pattern.compile(" "), 2)
 
                     if (msgStr.startsWith(Command.说.name)) {
-                        say(msgStr.substring(Command.说.name.length), event.group)
+                        say(msgStr.substring(Command.说.name.length))
                         return true
                     }
                     if (splitMsg.size == 2) {
                         when (splitMsg[0]) {
-                            Command.实时天气.name -> realTimeWeather(splitMsg[1], event.group)
-                            Command.未来天气.name -> threeDayWeather(splitMsg[1], event.group)
-                            Command.天气指数.name -> weatherIndex(splitMsg[1], event.group)
-                            Command.日出日落.name -> sunRiseAndSunSet(splitMsg[1], event.group)
-                            Command.月升月落.name -> moonRiseAndMoonSet(splitMsg[1], event.group)
+                            Command.实时天气.name -> realTimeWeather(splitMsg[1])
+                            Command.未来天气.name -> threeDayWeather(splitMsg[1])
+                            Command.天气指数.name -> weatherIndex(splitMsg[1])
+                            Command.日出日落.name -> sunRiseAndSunSet(splitMsg[1])
+                            Command.月升月落.name -> moonRiseAndMoonSet(splitMsg[1])
                             else -> return false
                         }
                         return true
@@ -185,7 +184,7 @@ class GroupRecreation(groupHandler: GroupHandler, database: GroupDatabaseImpl) :
     /**
      * 摸鱼人日历
      */
-    private suspend fun fishCalendar(group: Group) = withContext(Dispatchers.IO) {
+    private suspend fun fishCalendar() = withContext(Dispatchers.IO) {
         //发送http请求摸鱼人日历
         try {
             val response = HttpUtils.get(HttpUrl.FishCalendar)!!.string()
@@ -193,51 +192,51 @@ class GroupRecreation(groupHandler: GroupHandler, database: GroupDatabaseImpl) :
             val code = json.getIntValue("code")
             if (code != 200) {
                 val message = json.getString("message")
-                group.sendMessage("请求失败：$message")
+                myGroup.sendMessage("请求失败：$message")
                 return@withContext
             }
             val data = json.getJSONObject("data")
             val url = data.getString("moyu_url")
             val pubTime = data.getJSONArray("articles").getJSONObject(0).getLong("pub_time") ?: 0
-            group.sendMessage(getCalendarMsg(url, pubTime, group.botAsMember.bot, group))
+            myGroup.sendMessage(getCalendarMsg(url, pubTime, myGroup.botAsMember.bot, myGroup))
         } catch (e: IOException) {
-            group.sendMessage("请求失败: $e")
+            myGroup.sendMessage("请求失败: $e")
         }
     }
 
     /**
      * 文字转语音
      */
-    private suspend fun say(text: String, group: Group) = withContext(Dispatchers.IO) {
+    private suspend fun say(text: String) = withContext(Dispatchers.IO) {
         val isIllegal = text.replace("[^\\u4e00-\\u9fa5a-zA-Z0-9]".toRegex(), "").let { it.isEmpty() || it.length > 128 }
         if (isIllegal) {
-            group.sendMessage("请不要输入空白或过长内容")
+            myGroup.sendMessage("请不要输入空白或过长内容")
             return@withContext
         }
         val file = File(AudioCachePath + text.hashCode() + ".mp3")
         val response = sogouTextToAudio(text)
         if (response == null) {
-            group.sendMessage("请求失败")
+            myGroup.sendMessage("请求失败")
             return@withContext
         }
         Utils.writeFile(file.path, response, false)
         //上传语音
         val resource = file.toExternalResource()
         val audio = resource.use { resource ->
-            group.uploadAudio(resource)
+            myGroup.uploadAudio(resource)
         }
         file.delete()
-        group.sendMessage(audio)
+        myGroup.sendMessage(audio)
     }
 
     /**
      * 搜索城市id
      */
-    private suspend fun getCity(location: String, group: Group) = withContext(Dispatchers.IO) {
+    private suspend fun getCity(location: String) = withContext(Dispatchers.IO) {
         //将location分隔
         val splitLocation = location.split(Pattern.compile(" "))
         if (splitLocation.size > 2) {
-            group.sendMessage("格式错误，最多可指定一个上级行政区。例如：广东 广州")
+            myGroup.sendMessage("格式错误，最多可指定一个上级行政区。例如：广东 广州")
             return@withContext null
         }
         //搜索城市
@@ -246,12 +245,12 @@ class GroupRecreation(groupHandler: GroupHandler, database: GroupDatabaseImpl) :
         else
             weather.searchCity(location)
         if (cityJson == null) {
-            group.sendMessage("未找到该城市")
+            myGroup.sendMessage("未找到该城市")
             return@withContext null
         }
         val statusCode = weather.getStatusCode(cityJson.getString("code"))!!
         if (statusCode != QWeatherCode.SUCCESS) {
-            group.sendMessage(statusCode.toString())
+            myGroup.sendMessage(statusCode.toString())
             return@withContext null
         }
         val location1 = cityJson.getJSONArray("location").getJSONObject(0)
@@ -280,16 +279,16 @@ class GroupRecreation(groupHandler: GroupHandler, database: GroupDatabaseImpl) :
      * 查询实时天气
      * @param location 位置。可模糊搜索：北京 朝阳
      */
-    private suspend fun realTimeWeather(location: String, group: Group) = withContext(Dispatchers.IO) {
-        val city = getCity(location, group) ?: return@withContext
+    private suspend fun realTimeWeather(location: String) = withContext(Dispatchers.IO) {
+        val city = getCity(location) ?: return@withContext
         val weatherJson = weather.nowWeather(city.id)
         if (weatherJson == null) {
-            group.sendMessage("查询失败")
+            myGroup.sendMessage("查询失败")
             return@withContext
         }
         val statusCode = weather.getStatusCode(weatherJson.getString("code"))!!
         if (statusCode != QWeatherCode.SUCCESS) {
-            group.sendMessage(statusCode.toString())
+            myGroup.sendMessage(statusCode.toString())
             return@withContext
         }
         val now = weatherJson.getJSONObject("now")
@@ -306,37 +305,37 @@ class GroupRecreation(groupHandler: GroupHandler, database: GroupDatabaseImpl) :
                 append("\n一小时降水量：$precip 毫米")
             }
         }.toString()
-        group.sendMessage(str)
+        myGroup.sendMessage(str)
     }
 
     /**
      * 查询未来7日天气
      */
-    private suspend fun threeDayWeather(message: String, group: Group) = withContext(Dispatchers.IO) {
+    private suspend fun threeDayWeather(message: String) = withContext(Dispatchers.IO) {
         val splitMsg = message.split(Pattern.compile(" "), 2)
         if (splitMsg.size != 2) {
-            group.sendMessage("格式错误，正确格式：${Command.未来天气} (1~7) 城市")
+            myGroup.sendMessage("格式错误，正确格式：${Command.未来天气} (1~7) 城市")
             return@withContext
         }
         val dayNum = try {
             splitMsg[0].toInt()
         } catch (e: Exception) {
-            group.sendMessage("时间格式错误，请输入1~7的数字")
+            myGroup.sendMessage("时间格式错误，请输入1~7的数字")
             return@withContext
         }
         if (dayNum !in 1..7) {
-            group.sendMessage("只能查询1~7天内的天气")
+            myGroup.sendMessage("只能查询1~7天内的天气")
             return@withContext
         }
-        val city = getCity(splitMsg[1], group) ?: return@withContext
+        val city = getCity(splitMsg[1]) ?: return@withContext
         val weatherJson = weather.threeDayWeather(city.id)
         if (weatherJson == null) {
-            group.sendMessage("查询失败")
+            myGroup.sendMessage("查询失败")
             return@withContext
         }
         val statusCode = weather.getStatusCode(weatherJson.getString("code"))!!
         if (statusCode != QWeatherCode.SUCCESS) {
-            group.sendMessage(statusCode.toString())
+            myGroup.sendMessage(statusCode.toString())
             return@withContext
         }
         val daily = weatherJson.getJSONArray("daily").getJSONObject(dayNum - 1)
@@ -356,22 +355,22 @@ class GroupRecreation(groupHandler: GroupHandler, database: GroupDatabaseImpl) :
             }
             append("\n")
         }.toString()
-        group.sendMessage(str)
+        myGroup.sendMessage(str)
     }
 
     /**
      * 查询今日天气指数
      */
-    private suspend fun weatherIndex(location: String, group: Group) = withContext(Dispatchers.IO) {
-        val city = getCity(location, group) ?: return@withContext
+    private suspend fun weatherIndex(location: String) = withContext(Dispatchers.IO) {
+        val city = getCity(location) ?: return@withContext
         val weatherJson = weather.todayWeatherIndex(city.id)
         if (weatherJson == null) {
-            group.sendMessage("查询失败")
+            myGroup.sendMessage("查询失败")
             return@withContext
         }
         val statusCode = weather.getStatusCode(weatherJson.getString("code"))!!
         if (statusCode != QWeatherCode.SUCCESS) {
-            group.sendMessage(statusCode.toString())
+            myGroup.sendMessage(statusCode.toString())
             return@withContext
         }
         val daily = weatherJson.getJSONArray("daily")
@@ -388,16 +387,16 @@ class GroupRecreation(groupHandler: GroupHandler, database: GroupDatabaseImpl) :
             //删除做后一个换行符
             deleteCharAt(lastIndex)
         }.toString()
-        group.sendMessage(str)
+        myGroup.sendMessage(str)
     }
 
     /**
      * 查询日出日落
      */
-    private suspend fun sunRiseAndSunSet(message: String, group: Group) = withContext(Dispatchers.IO) {
+    private suspend fun sunRiseAndSunSet(message: String) = withContext(Dispatchers.IO) {
         val splitMsg = message.split(Pattern.compile(" "), 2)
         if (splitMsg.size != 2) {
-            group.sendMessage("格式错误，正确格式：${Command.日出日落} 第几天 城市")
+            myGroup.sendMessage("格式错误，正确格式：${Command.日出日落} 第几天 城市")
             return@withContext
         }
         val dayNum: Int
@@ -405,18 +404,18 @@ class GroupRecreation(groupHandler: GroupHandler, database: GroupDatabaseImpl) :
             dayNum = splitMsg[0].toInt()
             if (dayNum > 60) throw NumberFormatException()
         } catch (e: NumberFormatException) {
-            group.sendMessage("时间格式错误，请输入数字。并且不大于60")
+            myGroup.sendMessage("时间格式错误，请输入数字。并且不大于60")
             return@withContext
         }
-        val city = getCity(splitMsg[1], group) ?: return@withContext
+        val city = getCity(splitMsg[1]) ?: return@withContext
         val weatherJson = weather.sunRiseSunSet(city.id, dayNum)
         if (weatherJson == null) {
-            group.sendMessage("查询失败")
+            myGroup.sendMessage("查询失败")
             return@withContext
         }
         val statusCode = weather.getStatusCode(weatherJson.getString("code"))!!
         if (statusCode != QWeatherCode.SUCCESS) {
-            group.sendMessage(statusCode.toString())
+            myGroup.sendMessage(statusCode.toString())
             return@withContext
         }
         val str = StringBuilder().apply {
@@ -424,16 +423,16 @@ class GroupRecreation(groupHandler: GroupHandler, database: GroupDatabaseImpl) :
             append("日出：${weatherJson.getString("sunrise") ?: "无"}\n")
             append("日落：${weatherJson.getString("sunset") ?: "无"}")
         }.toString()
-        group.sendMessage(str)
+        myGroup.sendMessage(str)
     }
 
     /**
      * 查询月亮
      */
-    private suspend fun moonRiseAndMoonSet(message: String, group: Group) = withContext(Dispatchers.IO) {
+    private suspend fun moonRiseAndMoonSet(message: String) = withContext(Dispatchers.IO) {
         val splitMsg = message.split(Pattern.compile(" "), 2)
         if (splitMsg.size != 2) {
-            group.sendMessage("格式错误，正确格式：${Command.月升月落} 第几天 城市")
+            myGroup.sendMessage("格式错误，正确格式：${Command.月升月落} 第几天 城市")
             return@withContext
         }
         val dayNum: Int
@@ -441,18 +440,18 @@ class GroupRecreation(groupHandler: GroupHandler, database: GroupDatabaseImpl) :
             dayNum = splitMsg[0].toInt()
             if (dayNum > 60) throw NumberFormatException()
         } catch (e: NumberFormatException) {
-            group.sendMessage("时间格式错误，请输入数字。并且不大于60")
+            myGroup.sendMessage("时间格式错误，请输入数字。并且不大于60")
             return@withContext
         }
-        val city = getCity(splitMsg[1], group) ?: return@withContext
+        val city = getCity(splitMsg[1]) ?: return@withContext
         val weatherJson = weather.moonRiseMoonSet(city.id, dayNum)
         if (weatherJson == null) {
-            group.sendMessage("查询失败")
+            myGroup.sendMessage("查询失败")
             return@withContext
         }
         val statusCode = weather.getStatusCode(weatherJson.getString("code"))!!
         if (statusCode != QWeatherCode.SUCCESS) {
-            group.sendMessage(statusCode.toString())
+            myGroup.sendMessage(statusCode.toString())
             return@withContext
         }
         val str = StringBuilder().apply {
@@ -460,7 +459,7 @@ class GroupRecreation(groupHandler: GroupHandler, database: GroupDatabaseImpl) :
             append("月升：${weatherJson.getString("moonrise") ?: "无"}\n")
             append("月落：${weatherJson.getString("moonset") ?: "无"}")
         }.toString()
-        group.sendMessage(str)
+        myGroup.sendMessage(str)
     }
 
 }
