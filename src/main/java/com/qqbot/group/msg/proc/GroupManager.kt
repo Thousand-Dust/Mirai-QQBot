@@ -2,7 +2,6 @@ package com.qqbot.group.msg.proc
 
 import com.qqbot.Info
 import com.qqbot.TimeMillisecond
-import com.qqbot.database.group.GroupDatabase
 import com.qqbot.database.group.GroupDatabaseImpl
 import com.qqbot.group.GroupEventHandler
 import com.qqbot.group.checkPermission
@@ -21,7 +20,8 @@ import kotlin.math.min
  * 群管系统
  * @author Thousand-Dust
  */
-class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabaseImpl) : GroupMsgProc(groupHandler, database) {
+class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabaseImpl) :
+    GroupMsgProc(groupHandler, database) {
 
     private enum class Command {
         踢,
@@ -84,21 +84,23 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabaseImpl)
             return null
         }
 
-        return "群管系统：\n" +
-                "踢出群聊：${Command.踢}/${Command.t}+@目标\n" +
-                "踢出并拉黑：${Command.踢黑}/${Command.tb}+@目标\n" +
-                "禁言：${Command.禁言}/${Command.ban}+@目标+时间和单位(默认10m) (s秒,m分钟,h小时,d天)\n" +
-                "解禁：${Command.解禁}/${Command.kj}+@目标\n" +
-                "撤回：" + Command.撤回 + "+@目标+撤回数量(默认10)\n" +
-                "撤回关键词：" + Command.撤回关键词 + "+关键词\n" +
-                "封印：" + Command.封印 + "+@目标+封印层数\n" +
-                "解除封印：" + Command.解除封印 + "+@目标\n" +
-                "查看封印列表：" + Command.封印列表 + "\n" +
-                "查询消息记录：" + Command.查询消息记录 + "@目标+查询数量(默认5)\n" +
-                "开启/关闭全员禁言：(开启/关闭)全员禁言\n" +
-                "查看被禁言群员列表：" + Command.禁言列表 + "\n" +
-                "解除所有群员的禁言：" + Command.全部解禁 + "\n" +
-                "清屏：" + Command.清屏 + ""
+        return """"
+                群管系统：\n
+                踢出群聊：${Command.踢}/${Command.t}+@目标
+                踢出并拉黑：${Command.踢黑}/${Command.tb}+@目标
+                禁言：${Command.禁言}/${Command.ban}+@目标+时间和单位(默认10m) (s秒,m分钟,h小时,d天)
+                解禁：${Command.解禁}/${Command.kj}+@目标
+                撤回：${Command.撤回}+@目标+撤回数量(默认10)
+                撤回关键词：${Command.撤回关键词}+关键词
+                封印：${Command.封印}+@目标+封印层数
+                解除封印：${Command.解除封印}+@目标
+                查看封印列表：${Command.封印列表}
+                查询消息记录：${Command.查询消息记录}@目标+查询数量(默认5)
+                开启/关闭全员禁言：(开启/关闭)全员禁言
+                查看被禁言群员列表：${Command.禁言列表}
+                解除所有群员的禁言：${Command.全部解禁}
+                清屏： ${Command.清屏}
+                """.trimIndent()
     }
 
     /**
@@ -123,27 +125,27 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabaseImpl)
         if (message.size == 2) {
             when (command.toString()) {
                 Command.封印列表.name -> {
-                    return sealList(event.group)
+                    return sealList()
                 }
                 Command.开启全员禁言.name -> {
-                    return muteAll(event.group)
+                    return muteAll()
                 }
                 Command.关闭全员禁言.name -> {
-                    return unmuteAll(event.group)
+                    return unmuteAll()
                 }
                 Command.禁言列表.name -> {
-                    return memberMuteList(event.group)
+                    return memberMuteList()
                 }
                 Command.全部解禁.name -> {
-                    return memberUnmuteAll(event.group)
+                    return memberUnmuteAll()
                 }
                 Command.清屏.name -> {
-                    return clearScreen(event.group)
+                    return clearScreen()
                 }
                 else -> {
                     val comMsgStr = command.toString()
                     if (comMsgStr.startsWith(Command.撤回关键词.name)) {
-                        return recallKeyword(message, comMsgStr.substring(Command.撤回关键词.name.length), event.group)
+                        return recallKeyword(message, comMsgStr.substring(Command.撤回关键词.name.length))
                     }
                 }
             }
@@ -152,38 +154,36 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabaseImpl)
         if (message.size >= 3) {
             when (command.toString()) {
                 Command.踢.name, Command.t.name -> {
-                    return kick(message[2], event.sender, event.group)
+                    return kick(message[2], event.sender)
                 }
                 Command.踢黑.name, Command.tb.name -> {
-                    return kick(message[2], event.sender, event.group, true)
+                    return kick(message[2], event.sender, true)
                 }
                 Command.禁言.name, Command.ban.name -> {
                     return mute(
                         message[2],
                         isSingleMessageEmpty(message, 3, PlainText("10m")),
-                        event.sender,
-                        event.group
+                        event.sender
                     )
                 }
                 Command.解禁.name, Command.kj.name -> {
-                    return unmute(message[2], event.sender, event.group)
+                    return unmute(message[2], event.sender)
                 }
                 Command.撤回.name -> {
                     return recall(
                         message[2],
                         isSingleMessageEmpty(message, 3, PlainText("10")),
-                        event.sender,
-                        event.group
+                        event.sender
                     )
                 }
                 Command.封印.name -> {
-                    return seal(message[2], isSingleMessageEmpty(message, 3, PlainText("5")), event.sender, event.group)
+                    return seal(message[2], isSingleMessageEmpty(message, 3, PlainText("5")), event.sender)
                 }
                 Command.解除封印.name -> {
-                    return unseal(message[2], event.group)
+                    return unseal(message[2])
                 }
                 Command.查询消息记录.name -> {
-                    return queryMessage(message[2], isSingleMessageEmpty(message, 3, PlainText("5")), event.group)
+                    return queryMessage(message[2], isSingleMessageEmpty(message, 3, PlainText("5")))
                 }
             }
             return false
@@ -198,21 +198,20 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabaseImpl)
     private suspend fun kick(
         targetMessage: SingleMessage,
         sender: Member,
-        group: Group,
         block: Boolean = false
     ): Boolean {
         val targetId = if (targetMessage is At) targetMessage.target else return false
-        val target = group[targetId]
+        val target = myGroup[targetId]
         if (target == null) {
-            group.sendMessage("找不到该成员")
+            myGroup.sendMessage("找不到该成员")
             return true
         }
         //检查权限
-        if (!checkPermission(database, group, target, sender)) {
+        if (!checkPermission(database, myGroup, target, sender)) {
             return true
         }
         target.kick("", block)
-        group.sendMessage(if (block) "成功踢出并拉黑" else "踢出成功")
+        myGroup.sendMessage(if (block) "成功踢出并拉黑" else "踢出成功")
         return true
     }
 
@@ -224,20 +223,19 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabaseImpl)
     private suspend fun mute(
         targetMessage: SingleMessage,
         timeMessage: SingleMessage,
-        sender: Member,
-        group: Group
+        sender: Member
     ): Boolean {
         val targetId = if (targetMessage is At) targetMessage.target else return false
-        val target = group[targetId]
+        val target = myGroup[targetId]
         if (target == null) {
-            group.sendMessage("找不到该成员")
+            myGroup.sendMessage("找不到该成员")
             return true
         }
         if (timeMessage !is PlainText) {
             return false
         }
         //检查权限
-        if (!checkPermission(database, group, target, sender)) {
+        if (!checkPermission(database, myGroup, target, sender)) {
             return true
         }
         val timeMessageStr = timeMessage.toString().lowercase(Locale.getDefault()).replace(" ", "")
@@ -268,11 +266,11 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabaseImpl)
             }
 
             else -> {
-                group.sendMessage("时间单位错误，可选单位：秒(s) 分(m) 时(h) 天(d)")
+                myGroup.sendMessage("时间单位错误，可选单位：秒(s) 分(m) 时(h) 天(d)")
                 return true
             }
         }
-        group.sendMessage("禁言成功")
+        myGroup.sendMessage("禁言成功")
         return true
     }
 
@@ -280,20 +278,20 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabaseImpl)
      * 解除成员禁言
      * @param targetMessage 目标群成员 [SingleMessage] (@群成员)
      */
-    private suspend fun unmute(targetMessage: SingleMessage, sender: Member, group: Group): Boolean {
+    private suspend fun unmute(targetMessage: SingleMessage, sender: Member): Boolean {
         val targetId = if (targetMessage is At) targetMessage.target else return false
-        val target = group[targetId]
+        val target = myGroup[targetId]
         if (target == null) {
-            group.sendMessage("找不到该成员")
+            myGroup.sendMessage("找不到该成员")
             return true
         }
         //检查权限
-        if (group.botAsMember.permission.level <= target.permission.level) {
-            group.sendMessage("机器人权限不足")
+        if (myGroup.botAsMember.permission.level <= target.permission.level) {
+            myGroup.sendMessage("机器人权限不足")
             return true
         }
         target.unmute()
-        group.sendMessage("已解除禁言")
+        myGroup.sendMessage("已解除禁言")
 
         return true
     }
@@ -306,8 +304,7 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabaseImpl)
     private suspend fun recall(
         targetMessage: SingleMessage,
         countMessage: SingleMessage,
-        sender: Member,
-        group: Group
+        sender: Member
     ): Boolean {
         if (cacheSize() < 1) return false
 
@@ -315,9 +312,9 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabaseImpl)
         if (countMessage !is PlainText) {
             return false
         }
-        group[targetId]?.let {
+        myGroup[targetId]?.let {
             //检查权限
-            if (!checkPermission(database, group, it, sender)) {
+            if (!checkPermission(database, myGroup, it, sender)) {
                 return true
             }
         }
@@ -325,7 +322,7 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabaseImpl)
         val count = countMessage.toString().replace(" ", "").toInt()
         //已撤回的数量
         var index = 0
-        if (targetId == myGroup.botAsMember.id) {
+        if (targetId == this.myGroup.botAsMember.id) {
             //被撤回对象是机器人
             for (i in groupHandler.botSendEventCache.lastIndex downTo 0) {
                 val event = groupHandler.botSendEventCache[i]
@@ -354,26 +351,33 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabaseImpl)
                 }
             }
         }
-        group.sendMessage("撤回完毕")
+        myGroup.sendMessage("撤回完毕")
         return true
     }
 
     /**
      * 根据关键词撤回群员消息
      */
-    private suspend fun recallKeyword(senderMsg: MessageChain, keyword: String, group: Group): Boolean {
+    private suspend fun recallKeyword(senderMsg: MessageChain, keyword: String): Boolean {
         if (cacheSize() < 1) return false
 
+        //撤回的消息数量
+        var count = 0
         for (i in cacheLastIndex() downTo cacheLastIndex() - min(128, cacheLastIndex())) {
             val message = getCache(i).message
             if (message.toString().contains(keyword) && senderMsg.source != message.source) {
                 try {
                     message.recall()
+                    count++
                 } catch (e: IllegalStateException) {
                 }
             }
         }
-        group.sendMessage("已撤回包含关键词 \"$keyword\" 的消息")
+        if (count == 0) {
+            myGroup.sendMessage("未找到包含关键词 \"$keyword\" 的消息")
+            return true
+        }
+        myGroup.sendMessage("已撤回包含关键词 \"$keyword\" 的${count}消息")
         return true
     }
 
@@ -383,25 +387,24 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabaseImpl)
     private suspend fun seal(
         targetMessage: SingleMessage,
         countMessage: SingleMessage,
-        sender: Member,
-        group: Group
+        sender: Member
     ): Boolean {
         val targetId = if (targetMessage is At) targetMessage.target else return false
         if (countMessage !is PlainText) {
             return false
         }
-        val target = group[targetId]
+        val target = myGroup[targetId]
         if (target == null) {
-            group.sendMessage("找不到该成员")
+            myGroup.sendMessage("找不到该成员")
             return true
         }
         //检查权限
-        if (!checkPermission(database, group, target, sender)) {
+        if (!checkPermission(database, myGroup, target, sender)) {
             return true
         }
         sealMap[target.id] = countMessage.toString().replace(" ", "").toInt()
 
-        group.sendMessage("封印成功")
+        myGroup.sendMessage("封印成功")
 
         return true
     }
@@ -409,11 +412,11 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabaseImpl)
     /**
      * 解除群员封印
      */
-    private suspend fun unseal(targetMessage: SingleMessage, group: Group): Boolean {
+    private suspend fun unseal(targetMessage: SingleMessage): Boolean {
         val targetId = if (targetMessage is At) targetMessage.target else return false
 
         if (sealMap.remove(targetId) != null) {
-            group.sendMessage("已解除封印")
+            myGroup.sendMessage("已解除封印")
         }
 
         return true
@@ -422,19 +425,19 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabaseImpl)
     /**
      * 查看封印列表
      */
-    private suspend fun sealList(group: Group): Boolean {
+    private suspend fun sealList(): Boolean {
         if (sealMap.isEmpty()) {
-            group.sendMessage("封印列表为空")
+            myGroup.sendMessage("封印列表为空")
             return true
         }
         //找出重复的名字
         val repeatNameList = ArrayList<String>(10)
         for (i in sealMap) {
-            val name = group[i.key]?.nameCardOrNick ?: "已退群成员"
+            val name = myGroup[i.key]?.nameCardOrNick ?: "已退群成员"
             //从sealMap查找是否有重复的名字
             for (j in sealMap) {
                 if (i.key == j.key) continue
-                if (name == (group[j.key]?.nameCardOrNick ?: "已退群成员")) {
+                if (name == (myGroup[j.key]?.nameCardOrNick ?: "已退群成员")) {
                     repeatNameList.add(name)
                     break
                 }
@@ -442,7 +445,7 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabaseImpl)
         }
         val builder = StringBuilder()
         for ((key, value) in sealMap) {
-            val nameOrNick = group[key]?.nameCardOrNick ?: "已退群成员"
+            val nameOrNick = myGroup[key]?.nameCardOrNick ?: "已退群成员"
             builder.append(nameOrNick)
             if (repeatNameList.contains(nameOrNick)) {
                 builder.append("(").append(key).append(")")
@@ -450,7 +453,7 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabaseImpl)
             builder.append("：").append(value).append("条\n")
         }
         builder.deleteCharAt(builder.lastIndex)
-        group.sendMessage(builder.toString())
+        myGroup.sendMessage(builder.toString())
         return true
     }
 
@@ -459,7 +462,7 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabaseImpl)
      * @param targetMessage 目标群成员 [SingleMessage] (@群成员)
      * @param countMessage 查询消息数量 [SingleMessage] 类型应该为: [PlainText]
      */
-    private suspend fun queryMessage(targetMessage: SingleMessage, countMessage: SingleMessage, group: Group): Boolean {
+    private suspend fun queryMessage(targetMessage: SingleMessage, countMessage: SingleMessage): Boolean {
         if (cacheSize() < 1) return false
         val targetId = if (targetMessage is At) targetMessage.target else return false
         if (countMessage !is PlainText) {
@@ -475,9 +478,9 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabaseImpl)
         //消息图片数量
         var imageCount = 0
 
-        val forwardMessage = ForwardMessageBuilder(group)
+        val forwardMessage = ForwardMessageBuilder(myGroup)
 
-        if (targetId == myGroup.botAsMember.id) {
+        if (targetId == this.myGroup.botAsMember.id) {
             //被查询对象是机器人
             for (i in groupHandler.botSendEventCache.lastIndex downTo 0) {
                 val event = groupHandler.botSendEventCache[i]
@@ -487,12 +490,12 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabaseImpl)
                 //判断消息内容是否超出可发送范围
                 if (imageCount >= 45 || length >= 4500) {
                     forwardMessage.add(
-                        myGroup.botAsMember,
+                        this.myGroup.botAsMember,
                         MessageChainBuilder().append("查询的消息数量过多，已自动停止查询").build()
                     )
                     break
                 }
-                forwardMessage.add(myGroup.botAsMember, msg, event.receipt?.sourceTime ?: -1)
+                forwardMessage.add(this.myGroup.botAsMember, msg, event.receipt?.sourceTime ?: -1)
                 index++
                 if (index >= count) {
                     break
@@ -509,7 +512,7 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabaseImpl)
                     //判断消息内容是否超出可发送范围
                     if (imageCount >= 45 || length >= 4500) {
                         forwardMessage.add(
-                            myGroup.botAsMember,
+                            this.myGroup.botAsMember,
                             MessageChainBuilder().append("查询的消息数量过多，已自动停止查询").build()
                         )
                         break
@@ -524,35 +527,35 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabaseImpl)
         }
         forwardMessage.reverse()
 
-        group.sendMessage(forwardMessage.build())
+        myGroup.sendMessage(forwardMessage.build())
         return true
     }
 
     /**
      * 开启全员禁言
      */
-    private suspend fun muteAll(group: Group): Boolean {
-        group.settings.isMuteAll = true
-        group.sendMessage("全员禁言开启")
+    private suspend fun muteAll(): Boolean {
+        myGroup.settings.isMuteAll = true
+        myGroup.sendMessage("全员禁言开启")
         return true
     }
 
     /**
      * 关闭全员禁言
      */
-    private suspend fun unmuteAll(group: Group): Boolean {
-        group.settings.isMuteAll = false
-        group.sendMessage("全员禁言关闭")
+    private suspend fun unmuteAll(): Boolean {
+        myGroup.settings.isMuteAll = false
+        myGroup.sendMessage("全员禁言关闭")
         return true
     }
 
     /**
      * 查看被禁言群员列表
      */
-    private suspend fun memberMuteList(group: Group): Boolean {
-        val muteList = group.members.filter { it.isMuted }
+    private suspend fun memberMuteList(): Boolean {
+        val muteList = myGroup.members.filter { it.isMuted }
         if (muteList.isEmpty()) {
-            group.sendMessage("当前没有被禁言的群员")
+            myGroup.sendMessage("当前没有被禁言的群员")
             return true
         }
         //找出重复的名字
@@ -580,23 +583,23 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabaseImpl)
             //删除最后一个换行符
             deleteCharAt(lastIndex)
         }
-        group.sendMessage(message)
+        myGroup.sendMessage(message)
         return true
     }
 
     /**
      * 解除所有群员的禁言
      */
-    private suspend fun memberUnmuteAll(group: Group): Boolean {
-        group.members.filter { it.isMuted }.let {
+    private suspend fun memberUnmuteAll(): Boolean {
+        myGroup.members.filter { it.isMuted }.let {
             if (it.isEmpty()) {
-                group.sendMessage("没有群员被禁言")
+                myGroup.sendMessage("没有群员被禁言")
                 return@let
             }
             it.forEach { member ->
                 member.unmute()
             }
-            group.sendMessage("已解除所有群员的禁言")
+            myGroup.sendMessage("已解除所有群员的禁言")
         }
         return true
     }
@@ -604,8 +607,8 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabaseImpl)
     /**
      * 清屏
      */
-    private suspend fun clearScreen(group: Group): Boolean {
-        group.sendMessage(("清屏" + ("\n").repeat(20)).repeat(10))
+    private suspend fun clearScreen(): Boolean {
+        myGroup.sendMessage(("清屏" + ("\n").repeat(20)).repeat(10))
         return true
     }
 

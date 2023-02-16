@@ -1,7 +1,6 @@
 package com.qqbot.group.msg.proc
 
 import com.qqbot.Info
-import com.qqbot.database.group.GroupDatabase
 import com.qqbot.database.group.GroupDatabaseImpl
 import com.qqbot.database.group.MemberData
 import com.qqbot.group.GroupEventHandler
@@ -73,7 +72,7 @@ class GroupOwner(groupHandler: GroupEventHandler, database: GroupDatabaseImpl) :
         if (message.size == 2) {
             when (command.toString()) {
                 Command.群管列表.name -> {
-                    getManagerList(event.group)
+                    getManagerList()
                     return true
                 }
             }
@@ -83,11 +82,11 @@ class GroupOwner(groupHandler: GroupEventHandler, database: GroupDatabaseImpl) :
         if (message.size >= 3) {
             when (command.toString()) {
                 Command.添加群管.name -> {
-                    addManager(message[2], event.group)
+                    addManager(message[2])
                     return true
                 }
                 Command.删除群管.name -> {
-                    removeManager(message[2], event.group)
+                    removeManager(message[2])
                     return true
                 }
             }
@@ -99,10 +98,10 @@ class GroupOwner(groupHandler: GroupEventHandler, database: GroupDatabaseImpl) :
     /**
      * 获取群管列表
      */
-    private suspend fun getManagerList(group: Group) {
+    private suspend fun getManagerList() {
         val managerList = database.getPermissions(GroupPermission.ADMIN.level)
         if (managerList.isEmpty()) {
-            group.sendMessage("当前群没有群管")
+            myGroup.sendMessage("当前群没有群管")
             return
         }
         //找出重复的名字
@@ -128,54 +127,54 @@ class GroupOwner(groupHandler: GroupEventHandler, database: GroupDatabaseImpl) :
             //删除最后一个换行符
             deleteCharAt(lastIndex)
         }
-        group.sendMessage(message)
+        myGroup.sendMessage(message)
     }
 
     /**
      * 添加群管
      * @param targetMessage 被添加的对象
      */
-    private suspend fun addManager(targetMessage: SingleMessage, group: Group): Boolean {
+    private suspend fun addManager(targetMessage: SingleMessage): Boolean {
         val targetId = if (targetMessage is At) targetMessage.target else return false
-        val target = group[targetId]
+        val target = myGroup[targetId]
         if (target == null) {
-            group.sendMessage("找不到该成员")
+            myGroup.sendMessage("找不到该成员")
             return false
         }
         val targetData = database.getMember(targetId)
         if (target.isOperator() && targetData != null && targetData.isOperator()) {
-            group.sendMessage("该成员已经是群管")
+            myGroup.sendMessage("该成员已经是群管")
             return true
         }
         if (targetData == null) {
             database.addMember(MemberData(targetId, target.nameCardOrNick, permission = GroupPermission.ADMIN.level))
-            group.sendMessage("添加群管成功")
+            myGroup.sendMessage("添加群管成功")
             return true
         }
         targetData.permission = GroupPermission.ADMIN.level
         database.setMember(targetData)
-        group.sendMessage("添加群管成功")
+        myGroup.sendMessage("添加群管成功")
         return true
     }
 
     /**
      * 删除群管
      */
-    private suspend fun removeManager(targetMessage: SingleMessage, group: Group): Boolean {
+    private suspend fun removeManager(targetMessage: SingleMessage): Boolean {
         val targetId = if (targetMessage is At) targetMessage.target else return false
-        val target = group[targetId]
+        val target = myGroup[targetId]
         if (target == null) {
-            group.sendMessage("找不到该成员")
+            myGroup.sendMessage("找不到该成员")
             return false
         }
         val targetData = database.getMember(targetId)
         if (targetData == null || !targetData.isOperator()) {
-            group.sendMessage("该成员不是群管")
+            myGroup.sendMessage("该成员不是群管")
             return true
         }
         targetData.permission = GroupPermission.MEMBER.level
         database.setMember(targetData)
-        group.sendMessage("删除群管成功")
+        myGroup.sendMessage("删除群管成功")
         return true
     }
 
