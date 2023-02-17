@@ -34,7 +34,7 @@ class GroupMaster(groupHandler: GroupHandler, database: GroupDatabaseImpl) : Gro
         return "主人系统(仅机器人主人可用)"
     }
 
-    override fun getMenu(event: GroupMessageEvent): String? {
+    override fun getMenu(event: GroupMessageEvent): String {
         return """
             ${Command.开机.name} - 开机
             ${Command.关机.name} - 关机

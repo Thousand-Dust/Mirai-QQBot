@@ -7,7 +7,7 @@ import java.sql.DriverManager
  * qq群成员 MySql数据库操作
  * @author Thousand-Dust
  */
-class GroupDatabase(private val groupId: Long) : GroupDatabaseImpl {
+class GroupDatabase(groupId: Long) : GroupDatabaseImpl {
 
     companion object {
         private const val USER_NAME = "qqbot"
