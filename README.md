@@ -1,5 +1,5 @@
 ## 基于Mirai开发的的QQ机器人
-### 使用了：<br/>MySQL数据库<br/>OpenNLP自然语言处理框架<br/>lucene文本分类框架<br/>等进行开发
+### 使用了：<br/>MySQL数据库<br/储存数据>OpenNLP自然语言处理框架进行文本分类<br/>lucene进行文本分词
 
 <details>
 <summary>功能列表</summary>
