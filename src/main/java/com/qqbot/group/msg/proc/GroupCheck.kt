@@ -24,6 +24,7 @@ import java.util.stream.Collectors
  */
 class GroupCheck(groupHandler: GroupEventHandler, database: GroupDatabaseImpl) : GroupMsgProc(groupHandler, database) {
 
+    //文本分类
     private val textClassifier = TextClassifier("ai/model.bin")
 
     init {
