@@ -67,3 +67,7 @@
 </details>
 
 使用实时发言检测系统的自然语言处理检测违规发言功能，需要在项目文件下创建一个名为 'ai' 目录，并在 'ai' 目录下放置一个 ’mode.bin‘ 的文本分类模型文件。需要训练模型，可以在ai/data1.txt 和ai/data2.txt文件里以 "文本类型 文本数据" 的格式，并且一行一条写入数据。然后运行com.bot.AiMain类训练模型。如不需要可在com.qqbot.group.msg.proc.GroupCheck类里将相关代码注释
+
+**机器人入口类**
+- [Java](src/main/java/helloworld/java/HelloWorld.java)
+- [Kotlin](src/main/java/helloworld/kotlin/HelloWorld.kt)
