@@ -2,6 +2,7 @@ package com.qqbot.database.group
 
 import java.sql.Connection
 import java.sql.DriverManager
+import java.sql.Statement
 
 /**
  * qq群成员 MySql数据库实现
@@ -78,6 +79,8 @@ class GroupDatabase(groupId: Long) : GroupDatabaseImpl {
 
     private val TABLE_NAME = "group_$groupId"
 
+    private val statement = connection.createStatement()
+
     init {
         //数据表不存在则创建
         val sql = "CREATE TABLE IF NOT EXISTS $TABLE_NAME (" +
@@ -91,7 +94,7 @@ class GroupDatabase(groupId: Long) : GroupDatabaseImpl {
                 "$COLUMN_PERMISSION INT NOT NULL COMMENT '自定义权限', " +
                 "PRIMARY KEY ($COLUMN_GROUP_ID)" +
                 ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci;"
-        connection.createStatement().execute(sql)
+        statement.execute(sql)
     }
 
     /**
@@ -115,7 +118,7 @@ class GroupDatabase(groupId: Long) : GroupDatabaseImpl {
                 "${groupMember.violationCount}, " +
                 "${groupMember.permission}" +
                 ");"
-        connection.createStatement().execute(sql)
+        statement.execute(sql)
     }
 
     /**
@@ -123,7 +126,7 @@ class GroupDatabase(groupId: Long) : GroupDatabaseImpl {
      */
     override fun delete(id: Long) {
         val sql = "DELETE FROM $TABLE_NAME WHERE $COLUMN_GROUP_ID = ${id};"
-        connection.createStatement().execute(sql)
+        statement.execute(sql)
     }
 
     /**
@@ -139,7 +142,7 @@ class GroupDatabase(groupId: Long) : GroupDatabaseImpl {
                 "$COLUMN_VIOLATION_COUNT = ${member.violationCount}, " +
                 "$COLUMN_PERMISSION = ${member.permission} " +
                 "WHERE $COLUMN_GROUP_ID = ${member.id}"
-        connection.createStatement().execute(sql)
+        statement.execute(sql)
     }
 
     /**
@@ -147,7 +150,7 @@ class GroupDatabase(groupId: Long) : GroupDatabaseImpl {
      */
     override fun getMember(id: Long): MemberData? {
         val sql = "SELECT * FROM $TABLE_NAME WHERE $COLUMN_GROUP_ID = $id"
-        val resultSet = connection.createStatement().executeQuery(sql)
+        val resultSet = statement.executeQuery(sql)
         if (resultSet.next()) {
             return MemberData(
                 resultSet.getLong(COLUMN_GROUP_ID),
@@ -168,7 +171,7 @@ class GroupDatabase(groupId: Long) : GroupDatabaseImpl {
      */
     override fun getTopTen(): List<MemberData> {
         val sql = "SELECT * FROM $TABLE_NAME ORDER BY $COLUMN_SCORE DESC LIMIT 10"
-        val resultSet = connection.createStatement().executeQuery(sql)
+        val resultSet = statement.executeQuery(sql)
         val list = ArrayList<MemberData>(10)
         while (resultSet.next()) {
             list.add(
@@ -192,7 +195,7 @@ class GroupDatabase(groupId: Long) : GroupDatabaseImpl {
      */
     override fun getPermissions(permission: Int): List<MemberData> {
         val sql = "SELECT * FROM $TABLE_NAME WHERE $COLUMN_PERMISSION=$permission"
-        val resultSet = connection.createStatement().executeQuery(sql)
+        val resultSet = statement.executeQuery(sql)
         val list = ArrayList<MemberData>()
         while (resultSet.next()) {
             list.add(
