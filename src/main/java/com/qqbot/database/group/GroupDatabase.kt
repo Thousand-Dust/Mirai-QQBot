@@ -4,7 +4,7 @@ import java.sql.Connection
 import java.sql.DriverManager
 
 /**
- * qq群成员 MySql数据库操作
+ * qq群成员 MySql数据库实现
  * @author Thousand-Dust
  */
 class GroupDatabase(groupId: Long) : GroupDatabaseImpl {

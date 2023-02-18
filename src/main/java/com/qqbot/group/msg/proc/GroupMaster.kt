@@ -8,6 +8,7 @@ import com.qqbot.group.msg.GroupMsgProc
 import net.mamoe.mirai.contact.nameCardOrNick
 import net.mamoe.mirai.event.events.GroupMessageEvent
 import net.mamoe.mirai.message.data.At
+import net.mamoe.mirai.message.data.MessageChainBuilder
 import net.mamoe.mirai.message.data.PlainText
 import net.mamoe.mirai.message.data.SingleMessage
 
@@ -15,6 +16,9 @@ import net.mamoe.mirai.message.data.SingleMessage
  * 群 主人系统
  */
 class GroupMaster(groupHandler: GroupHandler, database: GroupDatabaseImpl) : GroupMsgProc(groupHandler, database) {
+
+    //TODO: 临时实现开关机功能，后期改为配置文件
+    private var isOn = true
 
     private enum class Command {
         开机,
@@ -44,6 +48,11 @@ class GroupMaster(groupHandler: GroupHandler, database: GroupDatabaseImpl) : Gro
 
     private suspend fun command(event: GroupMessageEvent): Boolean {
         if (event.sender.id != Info.RootManagerId) {
+            //TODO: 临时关机实现
+            if (!isOn) {
+                //直接返回true，不再执行后续的处理器
+                return true
+            }
             return false
         }
         val message = event.message
@@ -52,8 +61,20 @@ class GroupMaster(groupHandler: GroupHandler, database: GroupDatabaseImpl) : Gro
         if (message.size == 2) {
             when (commandMessage.contentToString()) {
                 Command.开机.name -> {
+                    if (isOn) {
+                        myGroup.sendMessage("已经开机")
+                        return false
+                    }
+                    isOn = true
+                    myGroup.sendMessage("开机成功")
                 }
                 Command.关机.name -> {
+                    if (!isOn) {
+                        myGroup.sendMessage("已经关机")
+                        return false
+                    }
+                    isOn = false
+                    myGroup.sendMessage("关机成功")
                 }
             }
             return false
@@ -93,7 +114,7 @@ class GroupMaster(groupHandler: GroupHandler, database: GroupDatabaseImpl) : Gro
         }
         targetData.score += count
         database.setMember(targetData)
-        myGroup.sendMessage("已为"+At(targetId)+"增加${count}积分")
+        myGroup.sendMessage(MessageChainBuilder().append("已为").append(At(targetId)).append("增加").append("积分").build())
 
         return true
     }

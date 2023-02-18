@@ -1,12 +1,12 @@
 ## 基于Mirai开发的的QQ机器人
-### 使用了：<br/>MySQL数据库储存数据<br/>OpenNLP自然语言处理框架进行文本分类<br/>lucene进行文本分词
+### 使用了：<br/>MySQL数据库储存数据<br/>OpenNLP自然语言处理框架进行文本分类<br/>Lucene进行文本分词
 
 <details>
 <summary>功能列表</summary>
 
 **主人系统**
-- 开机 （未完成）
-- 关机 （未完成）
+- 开机
+- 关机
 - 加积分
 
 **群主系统**
@@ -68,6 +68,6 @@
 
 使用实时发言检测系统的自然语言处理检测违规发言功能，需要在项目文件下创建一个名为 'ai' 目录，并在 'ai' 目录下放置一个 ’mode.bin‘ 的文本分类模型文件。需要训练模型，可以在ai/data1.txt 和ai/data2.txt文件里以 "文本类型 文本数据" 的格式，并且一行一条写入数据。然后运行com.bot.AiMain类训练模型。如不需要可在com.qqbot.group.msg.proc.GroupCheck类里将相关代码注释
 
-**机器人入口类**
+**机器人启动示例**
 - [Java](src/main/java/helloworld/java/HelloWorld.java)
 - [Kotlin](src/main/java/helloworld/kotlin/HelloWorld.kt)
