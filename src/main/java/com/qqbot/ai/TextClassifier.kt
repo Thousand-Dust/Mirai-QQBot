@@ -3,18 +3,14 @@ package com.qqbot.ai
 import com.qqbot.Utils
 import opennlp.tools.cmdline.doccat.DoccatFineGrainedReportListener
 import opennlp.tools.doccat.*
-import opennlp.tools.ml.AbstractEventTrainer
 import opennlp.tools.ml.maxent.GISTrainer
-import opennlp.tools.ml.maxent.quasinewton.QNTrainer
 import opennlp.tools.ml.naivebayes.NaiveBayesTrainer
-import opennlp.tools.ml.perceptron.PerceptronTrainer
 import opennlp.tools.util.ObjectStream
 import opennlp.tools.util.PlainTextByLineStream
 import opennlp.tools.util.TrainingParameters
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute
 import org.wltea.analyzer.lucene.IKAnalyzer
 import java.io.*
-import java.util.*
 
 /**
  * 基于OpenNLP的文本分类器

@@ -1,13 +1,15 @@
 package com.qqbot
 
-import okhttp3.Callback
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
-import okhttp3.RequestBody.Companion.toRequestBody
-import okhttp3.ResponseBody
+import net.mamoe.mirai.internal.deps.okhttp3.OkHttpClient
+import net.mamoe.mirai.internal.deps.okhttp3.Callback
+import net.mamoe.mirai.internal.deps.okhttp3.MediaType.Companion.toMediaType
+import net.mamoe.mirai.internal.deps.okhttp3.Request
+import net.mamoe.mirai.internal.deps.okhttp3.RequestBody.Companion.toRequestBody
+import net.mamoe.mirai.internal.deps.okhttp3.ResponseBody
 import java.io.IOException
 
 object HttpUtils {
+
     val instance = OkHttpClient()
 
     /**
@@ -19,7 +21,7 @@ object HttpUtils {
         params?.forEach {
             paramsStr.append(it.key).append("=").append(it.value).append("&")
         }
-        val request = okhttp3.Request.Builder()
+        val request = Request.Builder()
             .url(url + if (paramsStr.isNotEmpty()) "?" + paramsStr.substring(0, paramsStr.length - 1) else "")
             .build()
         val response = instance.newCall(request).execute()
@@ -34,7 +36,7 @@ object HttpUtils {
         params?.forEach {
             paramsStr.append(it.key).append("=").append(it.value).append("&")
         }
-        val request = okhttp3.Request.Builder()
+        val request = Request.Builder()
             .url(url + if (paramsStr.isNotEmpty()) "?" + paramsStr.substring(0, paramsStr.length - 1) else "")
             .build()
         instance.newCall(request).enqueue(callback)
@@ -45,7 +47,7 @@ object HttpUtils {
      */
     @Throws(IOException::class)
     fun post(url: String, body: String): ResponseBody? {
-        val request = okhttp3.Request.Builder()
+        val request = Request.Builder()
             .url(url)
             .post(body.toRequestBody("application/json;charset=utf-8".toMediaType()))
             .build()
@@ -57,7 +59,7 @@ object HttpUtils {
      * 发送非阻塞post请求
      */
     fun post(url: String, body: String, callback: Callback) {
-        val request = okhttp3.Request.Builder()
+        val request = Request.Builder()
             .url(url)
             .post(body.toRequestBody("application/json;charset=utf-8".toMediaType()))
             .build()

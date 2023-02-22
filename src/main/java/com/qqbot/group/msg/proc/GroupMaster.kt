@@ -114,7 +114,7 @@ class GroupMaster(groupHandler: GroupHandler, database: GroupDatabaseImpl) : Gro
         }
         targetData.score += count
         database.setMember(targetData)
-        myGroup.sendMessage(MessageChainBuilder().append("已为").append(At(targetId)).append("增加").append("积分").build())
+        myGroup.sendMessage(MessageChainBuilder().append("已为").append(At(targetId)).append("增加").append(count.toString()).append("积分").build())
 
         return true
     }

@@ -2,9 +2,10 @@ package com.qqbot.ai
 
 import com.alibaba.fastjson.JSON
 import com.qqbot.HttpUtils
-import okhttp3.*
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.RequestBody.Companion.toRequestBody
+import net.mamoe.mirai.internal.deps.okhttp3.Headers
+import net.mamoe.mirai.internal.deps.okhttp3.MediaType.Companion.toMediaType
+import net.mamoe.mirai.internal.deps.okhttp3.Request
+import net.mamoe.mirai.internal.deps.okhttp3.RequestBody.Companion.toRequestBody
 import java.io.IOException
 import java.lang.NullPointerException
 import java.util.*
