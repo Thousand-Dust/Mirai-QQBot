@@ -1,11 +1,11 @@
 package com.qqbot
 
-import net.mamoe.mirai.internal.deps.okhttp3.OkHttpClient
-import net.mamoe.mirai.internal.deps.okhttp3.Callback
-import net.mamoe.mirai.internal.deps.okhttp3.MediaType.Companion.toMediaType
-import net.mamoe.mirai.internal.deps.okhttp3.Request
-import net.mamoe.mirai.internal.deps.okhttp3.RequestBody.Companion.toRequestBody
-import net.mamoe.mirai.internal.deps.okhttp3.ResponseBody
+import okhttp3.OkHttpClient
+import okhttp3.Callback
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.ResponseBody
 import java.io.IOException
 
 object HttpUtils {
