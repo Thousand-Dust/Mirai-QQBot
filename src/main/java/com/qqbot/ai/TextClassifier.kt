@@ -24,6 +24,7 @@ class TextClassifier(modelPath: String, val dataPaths: Array<String> = arrayOf()
             field = value
             classifier = DocumentCategorizerME(value)
         }
+    // 分类器
     private var classifier: DocumentCategorizerME = DocumentCategorizerME(model)
 
     // 分词器
@@ -34,6 +35,7 @@ class TextClassifier(modelPath: String, val dataPaths: Array<String> = arrayOf()
      * @return 分类结果 Pair<类别, 置信度>
      */
     fun categorize(text: String): Pair<String, Double> {
+        //先将文本进行分词
         val formatText = participle(text.removeAt())
         if (formatText.isEmpty()) {
             return Pair("其他", 1.0)
@@ -115,7 +117,7 @@ class TextClassifier(modelPath: String, val dataPaths: Array<String> = arrayOf()
         }
         val lineStream: ObjectStream<String> = PlainTextByLineStream({ dataIn }, "UTF-8")
         val sampleStream: ObjectStream<DocumentSample> = DocumentSampleStream(lineStream)
-        // 训练文本分类器
+        // 训练参数
         val mlParams = TrainingParameters()
         mlParams.put(TrainingParameters.ALGORITHM_PARAM, GISTrainer.MAXENT_VALUE)
         mlParams.put(TrainingParameters.TRAINER_TYPE_PARAM, NaiveBayesTrainer.NAIVE_BAYES_VALUE)

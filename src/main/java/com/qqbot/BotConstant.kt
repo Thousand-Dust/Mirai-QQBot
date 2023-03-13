@@ -4,6 +4,7 @@ package com.qqbot
  * 基本信息
  */
 object Info {
+
     const val RootManagerId = 2984613883L
 
     //群消息事件缓存最大大小
@@ -35,6 +36,7 @@ object Info {
 
     //临时文件目录
     const val TEMP_PATH = "$DATA_ROOT_PATH/temp"
+
 }
 
 object HttpUrl {

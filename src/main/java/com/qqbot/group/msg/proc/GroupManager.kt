@@ -84,8 +84,8 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabaseImpl)
             return null
         }
 
-        return """"
-                群管系统：\n
+        return """
+                群管系统：
                 踢出群聊：${Command.踢}/${Command.t}+@目标
                 踢出并拉黑：${Command.踢黑}/${Command.tb}+@目标
                 禁言：${Command.禁言}/${Command.ban}+@目标+时间和单位(默认10m) (s秒,m分钟,h小时,d天)
