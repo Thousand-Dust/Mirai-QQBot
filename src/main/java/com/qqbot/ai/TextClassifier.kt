@@ -1,5 +1,6 @@
 package com.qqbot.ai
 
+import com.qqbot.Info
 import com.qqbot.Utils
 import opennlp.tools.cmdline.doccat.DoccatFineGrainedReportListener
 import opennlp.tools.doccat.*
@@ -97,7 +98,7 @@ class TextClassifier(modelPath: String, val dataPaths: Array<String> = arrayOf()
      */
     fun saveData(label: String, text: String) {
         Utils.writeFile(
-            "ai/classifier.$label",
+            "${Info.AI_DATA_PATH}/classifier.$label",
             "$label $text\n".toByteArray(),
             true
         )
