@@ -25,7 +25,7 @@ import java.util.stream.Collectors
 class GroupCheck(groupHandler: GroupEventHandler, database: GroupDatabaseImpl) : GroupMsgProc(groupHandler, database) {
 
     //文本分类
-    private val textClassifier = TextClassifier("ai/model.bin")
+    private val textClassifier = TextClassifier("${Info.AI_DATA_PATH}/model.bin")
 
     init {
 //        println("文本分类模型准确率为：${textClassifier.getAccuracy()}")
