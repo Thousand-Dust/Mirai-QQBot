@@ -8,7 +8,9 @@ import com.qqbot.database.group.MemberData
 import com.qqbot.group.GroupEventHandler
 import com.qqbot.group.GroupPermission
 import com.qqbot.group.msg.GroupMsgProc
+import com.qqbot.group.other.GroupOtherProc
 import com.qqbot.group.standard.proc.msg.*
+import com.qqbot.group.standard.proc.other.OtherStandard
 import kotlinx.coroutines.*
 import net.mamoe.mirai.contact.*
 import net.mamoe.mirai.event.events.*
@@ -29,6 +31,9 @@ class GroupHandler(myGroup: Group) : GroupEventHandler(myGroup) {
     //消息处理器列表
     private val msgProcList = ArrayList<GroupMsgProc>()
 
+    //其他事件处理器列表
+    private val otherProcList = ArrayList<GroupOtherProc>()
+
     //上次报错的时间
     private var lastErrorTime = 0L
 
@@ -36,13 +41,16 @@ class GroupHandler(myGroup: Group) : GroupEventHandler(myGroup) {
     private var lastErrorType: Class<*>? = null
 
     override fun onCreate(): Boolean {
-        //机器人在群里没有管理员权限，只监听群消息检测系统
+        //注册其他事件处理器
+        otherProcList.add(OtherStandard(myGroup))
+
+        //机器人在群里没有管理员权限，只注册群消息检测系统
         if (myGroup.botPermission < MemberPermission.ADMINISTRATOR) {
             msgProcList.add(GroupCheck(this, database))
             return true
         }
 
-        //按顺序添加消息处理器
+        //按顺序注册消息处理器
         msgProcList.add(GroupMaster(this, database))
         msgProcList.add(GroupOwner(this, database))
         msgProcList.add(GroupManager(this, database))
@@ -54,8 +62,9 @@ class GroupHandler(myGroup: Group) : GroupEventHandler(myGroup) {
     }
 
     override fun onRemove() {
-        //逐一调用消息处理器的onRemove方法
+        //逐一调用处理器的onRemove方法
         msgProcList.forEach { it.onRemove() }
+        otherProcList.forEach { it.onRemove() }
         database.close()
     }
 
@@ -142,16 +151,36 @@ class GroupHandler(myGroup: Group) : GroupEventHandler(myGroup) {
     }
 
     override fun onMemberJoinRequest(event: MemberJoinRequestEvent) {
-
+        for (otherProc in otherProcList) {
+            if (otherProc.onMemberJoinRequest(event)) {
+                break
+            }
+        }
     }
 
     override fun onMemberJoin(event: MemberJoinEvent) {
-
+        for (otherProc in otherProcList) {
+            if (otherProc.onMemberJoin(event)) {
+                break
+            }
+        }
     }
 
     @Synchronized
     override fun onMemberLeave(event: MemberLeaveEvent) {
+        for (otherProc in otherProcList) {
+            if (otherProc.onMemberLeave(event)) {
+                break
+            }
+        }
+    }
 
+    override fun onMemberPermissionChange(event: MemberPermissionChangeEvent) {
+        for (otherProc in otherProcList) {
+            if (otherProc.onMemberPermissionChange(event)) {
+                break
+            }
+        }
     }
 
     override fun onMyPermissionChange(event: BotGroupPermissionChangeEvent) {

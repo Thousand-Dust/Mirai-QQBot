@@ -75,6 +75,11 @@ abstract class GroupEventHandler(val myGroup: Group) {
     abstract fun onMemberLeave(event: MemberLeaveEvent)
 
     /**
+     * 群成员权限变更时调用，成员不可能是机器人自己
+     */
+    abstract fun onMemberPermissionChange(event: MemberPermissionChangeEvent)
+
+    /**
      * 机器人在群的权限变更时调用
      */
     abstract fun onMyPermissionChange(event: BotGroupPermissionChangeEvent)

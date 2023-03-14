@@ -57,6 +57,10 @@ class GroupEventHandOut(private val bot: Bot, private val onCreateHandler: (Grou
             it.subscribeAlways<MemberLeaveEvent> { event ->
                 groupHandlers[event.group.id]?.onMemberLeave(event)
             }
+            //群成员权限变化事件，成员不可能是机器人自己
+            it.subscribeAlways<MemberPermissionChangeEvent> { event ->
+                groupHandlers[event.group.id]?.onMemberPermissionChange(event)
+            }
 
             //bot加入群事件
             it.subscribeAlways<BotJoinGroupEvent> { event ->
