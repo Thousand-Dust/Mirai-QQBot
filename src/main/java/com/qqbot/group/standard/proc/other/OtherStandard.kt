@@ -1,4 +1,4 @@
-package com.qqbot.group.other.proc
+package com.qqbot.group.standard.proc.other
 
 import com.qqbot.TimeMillisecond
 import com.qqbot.group.other.GroupOtherProc

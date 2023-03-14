@@ -2,7 +2,7 @@ package helloworld.java;
 
 import com.qqbot.contact.ContactEventHandOut;
 import com.qqbot.group.GroupEventHandOut;
-import com.qqbot.group.GroupHandler;
+import com.qqbot.group.standard.GroupHandler;
 import net.mamoe.mirai.Bot;
 import net.mamoe.mirai.BotFactory;
 import net.mamoe.mirai.utils.BotConfiguration;

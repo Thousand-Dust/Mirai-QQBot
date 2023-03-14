@@ -1,11 +1,10 @@
-package com.qqbot.group.msg.proc
+package com.qqbot.group.standard.proc.msg
 
 import com.qqbot.Info
 import com.qqbot.TimeMillisecond
 import com.qqbot.TimeSecond
 import com.qqbot.Utils
 import com.qqbot.ai.TextClassifier
-import com.qqbot.database.group.GroupDatabase
 import com.qqbot.database.group.GroupDatabaseImpl
 import com.qqbot.database.group.MemberData
 import com.qqbot.group.GroupEventHandler
