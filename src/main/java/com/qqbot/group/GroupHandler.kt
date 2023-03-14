@@ -32,6 +32,7 @@ class GroupHandler(myGroup: Group) : GroupEventHandler(myGroup) {
 
     //上次报错的时间
     private var lastErrorTime = 0L
+
     //上次报错的类型
     private var lastErrorType: Class<*>? = null
 
@@ -142,6 +143,16 @@ class GroupHandler(myGroup: Group) : GroupEventHandler(myGroup) {
     }
 
     override fun onMemberJoinRequest(event: MemberJoinRequestEvent) {
+        runBlocking {
+            event.bot.getStranger(event.fromId)?.let {
+                val userProfile = it.queryProfile()
+                //等级大于等于16级的用户可以直接通过
+                if (userProfile.qLevel >= 16) {
+                    event.accept()
+                    return@runBlocking
+                }
+            }
+        }
     }
 
     override fun onMemberJoin(event: MemberJoinEvent) {
