@@ -27,9 +27,6 @@ class GroupHandler(myGroup: Group) : GroupEventHandler(myGroup) {
     //消息处理器列表
     private val msgProcList = ArrayList<GroupMsgProc>()
 
-    //上次发送踢出群通知的时间
-    private var lastKickTime = 0L
-
     //上次报错的时间
     private var lastErrorTime = 0L
 
@@ -143,46 +140,16 @@ class GroupHandler(myGroup: Group) : GroupEventHandler(myGroup) {
     }
 
     override fun onMemberJoinRequest(event: MemberJoinRequestEvent) {
-        runBlocking {
-            event.bot.getStranger(event.fromId)?.let {
-                val userProfile = it.queryProfile()
-                //等级大于等于16级的用户可以直接通过
-                if (userProfile.qLevel >= 16) {
-                    event.accept()
-                    return@runBlocking
-                }
-            }
-        }
+
     }
 
     override fun onMemberJoin(event: MemberJoinEvent) {
-        if (myGroup.botPermission < MemberPermission.ADMINISTRATOR) {
-            return
-        }
-        runBlocking {
-            event.group.sendMessage(
-                MessageChainBuilder().append("欢迎新人").append(At(event.member.id)).append(" 加入本群").build()
-            )
-        }
+
     }
 
     @Synchronized
     override fun onMemberLeave(event: MemberLeaveEvent) {
-        val currentTime = System.currentTimeMillis()
-        if (myGroup.botPermission < MemberPermission.ADMINISTRATOR || currentTime - lastKickTime < TimeMillisecond.SECOND * 20) {
-            return
-        }
-        runBlocking {
-            lastKickTime = currentTime
-            if (event is MemberLeaveEvent.Quit) {
-                event.group.sendMessage(At(event.member.id) + " 退出了本群")
-                return@runBlocking
-            }
-            if (event is MemberLeaveEvent.Kick && event.operator != null) {
-                event.group.sendMessage(At(event.member.id) + "被" + event.operator!!.nameCardOrNick + " 踢出了群聊")
-                return@runBlocking
-            }
-        }
+
     }
 
     override fun onMyPermissionChange(event: BotGroupPermissionChangeEvent) {

@@ -9,6 +9,7 @@ import java.util.stream.Stream
 
 /**
  * 群事件处理器，每个群单独一个实例
+ * @author Thousand-Dust
  */
 abstract class GroupEventHandler(val myGroup: Group) {
 
