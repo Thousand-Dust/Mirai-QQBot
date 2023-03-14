@@ -8,7 +8,7 @@ import net.mamoe.mirai.contact.Group
 import net.mamoe.mirai.event.events.*
 
 /**
- * 群消息事件分发处理类
+ * 群事件分发处理类
  * @author Thousand-Dust
  */
 class GroupEventHandOut(private val bot: Bot, private val onCreateHandler: (Group) -> GroupEventHandler) {
@@ -44,14 +44,20 @@ class GroupEventHandOut(private val bot: Bot, private val onCreateHandler: (Grou
             it.subscribeAlways<GroupMessagePostSendEvent> { event ->
                 groupHandlers[event.target.id]?.acceptBotSendMessage(event)
             }
-            //群成员加入事件
+
+            //有人申请加入群事件
+            it.subscribeAlways<MemberJoinRequestEvent> { event ->
+                groupHandlers[event.group?.id]?.onMemberJoinRequest(event)
+            }
+            //群成员加入群聊事件（已经加入）
             it.subscribeAlways<MemberJoinEvent> { event ->
                 groupHandlers[event.group.id]?.onMemberJoin(event)
             }
-            //群成员离开事件
+            //群成员退群事件（已经退群）
             it.subscribeAlways<MemberLeaveEvent> { event ->
                 groupHandlers[event.group.id]?.onMemberLeave(event)
             }
+
             //bot加入群事件
             it.subscribeAlways<BotJoinGroupEvent> { event ->
                 val group = event.group
