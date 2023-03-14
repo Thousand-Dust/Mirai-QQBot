@@ -1,9 +1,9 @@
-package com.qqbot.group.msg.proc
+package com.qqbot.group.standard.proc.msg
 
 import com.qqbot.Info
 import com.qqbot.database.group.GroupDatabaseImpl
 import com.qqbot.database.group.MemberData
-import com.qqbot.group.GroupHandler
+import com.qqbot.group.standard.GroupHandler
 import com.qqbot.group.msg.GroupMsgProc
 import net.mamoe.mirai.contact.nameCardOrNick
 import net.mamoe.mirai.event.events.GroupMessageEvent

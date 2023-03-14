@@ -1,4 +1,4 @@
-package com.qqbot.group.msg.proc
+package com.qqbot.group.standard.proc.msg
 
 import com.qqbot.Info
 import com.qqbot.TimeMillisecond

@@ -1,12 +1,14 @@
-package com.qqbot.group
+package com.qqbot.group.standard
 
 import com.qqbot.Info
 import com.qqbot.TimeMillisecond
 import com.qqbot.database.group.GroupDatabase
 import com.qqbot.database.group.GroupDatabaseImpl
 import com.qqbot.database.group.MemberData
+import com.qqbot.group.GroupEventHandler
+import com.qqbot.group.GroupPermission
 import com.qqbot.group.msg.GroupMsgProc
-import com.qqbot.group.msg.proc.*
+import com.qqbot.group.standard.proc.msg.*
 import kotlinx.coroutines.*
 import net.mamoe.mirai.contact.*
 import net.mamoe.mirai.event.events.*

@@ -1,4 +1,4 @@
-package com.qqbot.group.msg.proc
+package com.qqbot.group.standard.proc.msg
 
 import com.alibaba.fastjson.JSON
 import com.alibaba.fastjson.JSONObject
@@ -10,7 +10,7 @@ import com.qqbot.api.QWeather
 import com.qqbot.api.QWeatherCode
 import com.qqbot.api.sogouTextToAudio
 import com.qqbot.database.group.GroupDatabaseImpl
-import com.qqbot.group.GroupHandler
+import com.qqbot.group.standard.GroupHandler
 import com.qqbot.group.msg.GroupMsgProc
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext

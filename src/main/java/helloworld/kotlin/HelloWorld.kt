@@ -2,7 +2,7 @@ package helloworld.kotlin
 
 import com.qqbot.contact.ContactEventHandOut
 import com.qqbot.group.GroupEventHandOut
-import com.qqbot.group.GroupHandler
+import com.qqbot.group.standard.GroupHandler
 import kotlinx.coroutines.runBlocking
 import net.mamoe.mirai.BotFactory.INSTANCE.newBot
 import net.mamoe.mirai.contact.Group

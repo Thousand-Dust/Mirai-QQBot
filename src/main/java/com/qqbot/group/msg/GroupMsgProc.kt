@@ -32,7 +32,7 @@ abstract class GroupMsgProc(protected val groupHandler: GroupEventHandler, prote
     /**
      * 不需要再接收此群的消息时调用
      */
-    fun onRemove() {
+    open fun onRemove() {
         //do nothing
     }
 

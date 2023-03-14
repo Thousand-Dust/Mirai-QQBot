@@ -1,4 +1,4 @@
-package com.qqbot.group.msg.proc
+package com.qqbot.group.standard.proc.msg
 
 import com.qqbot.*
 import com.qqbot.database.group.GroupDatabaseImpl
@@ -6,7 +6,6 @@ import com.qqbot.database.group.MemberData
 import com.qqbot.group.GroupEventHandler
 import com.qqbot.group.checkPermission
 import com.qqbot.group.msg.GroupMsgProc
-import net.mamoe.mirai.contact.Group
 import net.mamoe.mirai.contact.Member
 import net.mamoe.mirai.contact.isBotMuted
 import net.mamoe.mirai.contact.nameCardOrNick
@@ -36,10 +35,6 @@ class GroupScore(groupHandler: GroupEventHandler, database: GroupDatabaseImpl) :
     }
 
     override suspend fun process(event: GroupMessageEvent): Boolean {
-        //在小鳄鱼群关闭积分系统
-        if (myGroup.id == 167902070L) {
-            return false
-        }
         //发言增加积分
         val member = event.sender
         var memberData = database.getMember(member.id)
@@ -70,18 +65,10 @@ class GroupScore(groupHandler: GroupEventHandler, database: GroupDatabaseImpl) :
     }
 
     override fun getDesc(): String {
-        //在小鳄鱼群关闭积分系统
-        if (myGroup.id == 167902070L) {
-            return "积分系统(已关闭)"
-        }
         return "积分系统(公开可用)"
     }
 
     override fun getMenu(event: GroupMessageEvent): String? {
-        //在小鳄鱼群关闭积分系统
-        if (myGroup.id == 167902070L) {
-            return null
-        }
         return "积分系统：\n" +
                 "每条发言随机获得1~2积分，禁言每分钟消耗20积分，解除禁言每分钟消耗10积分\n" +
                 "签到：" + Command.签到 + "\n" +
