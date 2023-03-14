@@ -59,12 +59,17 @@ abstract class GroupEventHandler(val myGroup: Group) {
     }
 
     /**
-     * 有群员入群时调用
+     * 有人申请加入群时调用
+     */
+    abstract fun onMemberJoinRequest(event: MemberJoinRequestEvent)
+
+    /**
+     * 有群员入群时调用（加入群聊后触发）
      */
     abstract fun onMemberJoin(event: MemberJoinEvent)
 
     /**
-     * 有群员退群时调用
+     * 有群员退群时调用（退出群聊后触发）
      */
     abstract fun onMemberLeave(event: MemberLeaveEvent)
 

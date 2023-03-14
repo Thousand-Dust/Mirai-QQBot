@@ -9,14 +9,11 @@ import com.qqbot.group.msg.GroupMsgProc
 import com.qqbot.group.msg.proc.*
 import kotlinx.coroutines.*
 import net.mamoe.mirai.contact.*
-import net.mamoe.mirai.event.events.BotGroupPermissionChangeEvent
-import net.mamoe.mirai.event.events.GroupMessageEvent
-import net.mamoe.mirai.event.events.MemberJoinEvent
-import net.mamoe.mirai.event.events.MemberLeaveEvent
+import net.mamoe.mirai.event.events.*
 import net.mamoe.mirai.message.data.*
 
 /**
- * 单个群的消息总处理类
+ * 单个群的事件普通总处理类
  * @author Thousand-Dust
  */
 class GroupHandler(myGroup: Group) : GroupEventHandler(myGroup) {
@@ -142,6 +139,9 @@ class GroupHandler(myGroup: Group) : GroupEventHandler(myGroup) {
                 lastErrorType = e.javaClass
             }
         }
+    }
+
+    override fun onMemberJoinRequest(event: MemberJoinRequestEvent) {
     }
 
     override fun onMemberJoin(event: MemberJoinEvent) {
