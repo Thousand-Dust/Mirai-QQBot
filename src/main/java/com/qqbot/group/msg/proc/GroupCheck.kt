@@ -21,6 +21,7 @@ import java.util.stream.Collectors
 
 /**
  * 群消息检测系统
+ * @author Thousand-Dust
  */
 class GroupCheck(groupHandler: GroupEventHandler, database: GroupDatabaseImpl) : GroupMsgProc(groupHandler, database) {
 
