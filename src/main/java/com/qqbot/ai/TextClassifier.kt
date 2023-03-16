@@ -1,7 +1,5 @@
 package com.qqbot.ai
 
-import com.qqbot.Info
-import com.qqbot.Utils
 import opennlp.tools.cmdline.doccat.DoccatFineGrainedReportListener
 import opennlp.tools.doccat.*
 import opennlp.tools.ml.maxent.GISTrainer
@@ -87,7 +85,7 @@ class TextClassifier(modelPath: String, val dataPaths: Array<String> = arrayOf()
     /**
      * 训练
      */
-    fun drillModel(inFiles: Array<String>, outFile: String, iterations: Int = 10000): DoccatModel {
+    fun drillModel(inFiles: Array<String>, outFile: String, iterations: Int = 10000, threads: Int = 5): DoccatModel {
         if (inFiles.isEmpty()) {
             throw IllegalArgumentException("No training files")
         }
@@ -104,6 +102,7 @@ class TextClassifier(modelPath: String, val dataPaths: Array<String> = arrayOf()
         mlParams.put(TrainingParameters.TRAINER_TYPE_PARAM, NaiveBayesTrainer.NAIVE_BAYES_VALUE)
         mlParams.put(TrainingParameters.CUTOFF_PARAM, 0)
         mlParams.put(TrainingParameters.ITERATIONS_PARAM, iterations)
+        mlParams.put(TrainingParameters.THREADS_PARAM, threads)
         val factory = DoccatFactory()
         val model = DocumentCategorizerME.train("zho", sampleStream, mlParams, factory)
         val modelOut: OutputStream = FileOutputStream(outFile)
