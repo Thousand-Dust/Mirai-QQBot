@@ -5,6 +5,7 @@ import com.qqbot.TimeMillisecond
 import com.qqbot.TimeSecond
 import com.qqbot.Utils
 import com.qqbot.ai.TextClassifier
+import com.qqbot.ai.removeAt
 import com.qqbot.database.group.GroupDatabaseImpl
 import com.qqbot.database.group.MemberData
 import com.qqbot.group.GroupEventHandler
@@ -16,6 +17,7 @@ import net.mamoe.mirai.message.data.At
 import net.mamoe.mirai.message.data.MessageSource.Key.recall
 import net.mamoe.mirai.message.data.PlainText
 import net.mamoe.mirai.message.data.time
+import java.awt.Label
 import java.util.stream.Collectors
 
 /**
@@ -73,11 +75,20 @@ class GroupCheck(groupHandler: GroupEventHandler, database: GroupDatabaseImpl) :
 
         val msgStr = message.contentToString()
         val msgStr1 = msgStr.replace(" ", "")
-        if (msgStr.length > 128 || msgStr1.isEmpty()) return false
+        if (msgStr.length > 256 || msgStr1.isEmpty()) return false
 
-        val result = textClassifier.categorize(msgStr)
+        //先将文本进行分词
+        val formatText = textClassifier.participle(msgStr.removeAt())
+        val result = if (formatText.isNotEmpty()) {
+            val category = textClassifier.categorize(formatText.split(" ").toTypedArray())
+            saveData(category.first, formatText, category.second)
+            category
+        } else {
+            Pair("其他", 1.0)
+        }
         val label = result.first
         val score = result.second
+
         if (!myGroup.botPermission.isOperator() || myGroup.isBotMuted) {
             return false
         }
@@ -137,6 +148,30 @@ class GroupCheck(groupHandler: GroupEventHandler, database: GroupDatabaseImpl) :
         }
 
         return false
+    }
+
+    /**
+     * 将分类结果保存到文件
+     */
+    fun saveData(label: String, text: String, prob: Double) {
+        if (prob > 0.99 || label == "聊天") {
+            return
+        }
+
+        if (prob > 0.9) {
+            //如果概率大于0.9，将结果保存到待自动训练的文件中
+            Utils.writeFile(
+                "${Info.AI_DATA_PATH}/toBeTrained.txt",
+                "$label $text\n".toByteArray(),
+                true
+            )
+            return
+        }
+        Utils.writeFile(
+            "${Info.AI_DATA_PATH}/$label.txt",
+            "$label $text\n".toByteArray(),
+            true
+        )
     }
 
     /**
