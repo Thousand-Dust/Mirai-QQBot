@@ -80,7 +80,7 @@ fun dataParticiple(classifier: TextClassifier, readPath: String, outPath: String
 /**
  * 对数据进行修正，输出到新文件
  */
-fun dataCorrection(classifier: TextClassifier, modelFile: File, dataFile: File, outDataFile: File) {
+fun dataCorrection(classifier: TextClassifier, dataFile: File, outDataFile: File) {
     val dataIn = FileInputStream(dataFile)
     val dataOut = FileOutputStream(outDataFile)
     //将文件内容按行循环读取
