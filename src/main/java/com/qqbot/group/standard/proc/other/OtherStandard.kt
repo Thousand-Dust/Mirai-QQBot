@@ -23,17 +23,18 @@ class OtherStandard(myGroup: Group) : GroupOtherProc(myGroup) {
      * 收到入群申请时调用
      */
     override fun onMemberJoinRequest(event: MemberJoinRequestEvent): Boolean {
-        return runBlocking {
-            event.bot.getStranger(event.fromId)?.let {
-                val userProfile = it.queryProfile()
-                //等级大于等于16级的用户可以直接通过
-                if (userProfile.qLevel >= 16) {
-                    event.accept()
-                    return@runBlocking true
-                }
-            }
-            false
-        }
+//        return runBlocking {
+//            event.bot.getStranger(event.fromId)?.let {
+//                val userProfile = it.queryProfile()
+//                //等级大于等于16级的用户可以直接通过
+//                if (userProfile.qLevel >= 16) {
+//                    event.accept()
+//                    return@runBlocking true
+//                }
+//            }
+//            false
+//        }
+        return false
     }
 
     /**
