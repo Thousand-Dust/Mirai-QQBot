@@ -18,6 +18,7 @@ import net.mamoe.mirai.message.data.MessageSource.Key.recall
 import net.mamoe.mirai.message.data.PlainText
 import net.mamoe.mirai.message.data.time
 import java.awt.Label
+import java.io.File
 import java.util.stream.Collectors
 
 /**
@@ -26,8 +27,13 @@ import java.util.stream.Collectors
  */
 class GroupCheck(groupHandler: GroupEventHandler, database: GroupDatabaseImpl) : GroupMsgProc(groupHandler, database) {
 
+    //model文件路径
+    private val modelFile = File("${Info.AI_DATA_PATH}/model.bin")
     //文本分类
-    private val textClassifier = TextClassifier("${Info.AI_DATA_PATH}/model.bin")
+    private val textClassifier = TextClassifier(modelFile.absolutePath)
+
+    //model文件最后修改时间
+    private var modelLastModified = modelFile.lastModified()
 
     init {
 //        println("文本分类模型准确率为：${textClassifier.getAccuracy()}")
@@ -46,6 +52,13 @@ class GroupCheck(groupHandler: GroupEventHandler, database: GroupDatabaseImpl) :
                 return true
             }
         }
+
+        //保证model是最新的
+        if (modelLastModified < modelFile.lastModified()) {
+            textClassifier.model = textClassifier.loadModel(modelFile.absolutePath)
+            modelLastModified = modelFile.lastModified()
+        }
+
         if (checkDirtyWord(event)) {
             return true
         }
@@ -67,7 +80,7 @@ class GroupCheck(groupHandler: GroupEventHandler, database: GroupDatabaseImpl) :
     }
 
     /**
-     * 发言检测 TODO：测试中
+     * 发言检测
      */
     private suspend fun checkDirtyWord(event: GroupMessageEvent): Boolean {
         val message = event.message
