@@ -35,13 +35,8 @@ class TextClassifier(modelPath: String, val dataPaths: Array<String> = arrayOf()
      * 文本分类
      * @return 分类结果 Pair<类别, 置信度>
      */
-    fun categorize(text: String): Pair<String, Double> {
-        //先将文本进行分词
-        val formatText = participle(text.removeAt())
-        if (formatText.isEmpty()) {
-            return Pair("其他", 1.0)
-        }
-        val probs = classifier.categorize(formatText.split(" ").toTypedArray())
+    fun categorize(text: Array<out String>): Pair<String, Double> {
+        val probs = classifier.categorize(text)
         //获取probs中最大的概率值的索引
         val maxProb = probs.maxOrNull() ?: probs[0]
         val maxProbIndex = probs.indexOfFirst {
@@ -57,10 +52,6 @@ class TextClassifier(modelPath: String, val dataPaths: Array<String> = arrayOf()
                 }
             }
         }*/
-        if (label != "聊天" || maxProb < 0.99) {
-            //保存结果用于调整模型
-            saveData(label, formatText)
-        }
         return Pair(label, maxProb)
     }
 
@@ -91,17 +82,6 @@ class TextClassifier(modelPath: String, val dataPaths: Array<String> = arrayOf()
         }
 
         return result.toString()
-    }
-
-    /**
-     * 将分类结果保存到文件
-     */
-    fun saveData(label: String, text: String) {
-        Utils.writeFile(
-            "${Info.AI_DATA_PATH}/classifier.$label",
-            "$label $text\n".toByteArray(),
-            true
-        )
     }
 
     /**
