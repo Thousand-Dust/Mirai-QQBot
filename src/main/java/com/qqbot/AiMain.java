@@ -13,7 +13,7 @@ public class AiMain {
 
     public static void main(String[] args) {
         //数据文件的路径
-        String[] paths = new String[]{Info.AI_DATA_PATH + "/data1.txt", Info.AI_DATA_PATH + "/data2.txt", Info.AI_DATA_PATH + "/classifier.add"};
+        String[] paths = new String[]{Info.AI_DATA_PATH + "/data1.txt", Info.AI_DATA_PATH + "/data2.txt", Info.AI_DATA_PATH + "/toBeTrained.txt"};
         //将第三个文件的数据删重
         AiUtilsKt.deleteDuplicateLines(paths[2], paths[2] + ".temp");
         new File(paths[2]).delete();

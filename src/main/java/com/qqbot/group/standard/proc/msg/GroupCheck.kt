@@ -88,7 +88,7 @@ class GroupCheck(groupHandler: GroupEventHandler, database: GroupDatabaseImpl) :
 
         val msgStr = message.contentToString()
         val msgStr1 = msgStr.replace(" ", "")
-        if (msgStr.length > 256 || msgStr1.isEmpty()) return false
+        if (msgStr.length > 256 || msgStr1.length < 2) return false
 
         //先将文本进行分词
         val formatText = textClassifier.participle(msgStr.removeAt())
@@ -167,7 +167,7 @@ class GroupCheck(groupHandler: GroupEventHandler, database: GroupDatabaseImpl) :
      * 将分类结果保存到文件
      */
     fun saveData(label: String, text: String, prob: Double) {
-        if (prob > 0.99 || label == "聊天") {
+        if (prob > 0.99 || label == "聊天" || text.length < 2) {
             return
         }
 
