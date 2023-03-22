@@ -85,7 +85,7 @@ class TextClassifier(modelPath: String, val dataPaths: Array<String> = arrayOf()
     /**
      * 训练
      */
-    fun drillModel(inFiles: Array<String>, outFile: String, iterations: Int = 10000, threads: Int = 5): DoccatModel {
+    fun drillModel(inFiles: Array<String>, outFile: String, cutoff: Int = 2, iterations: Int = 10000, threads: Int = 5): DoccatModel {
         if (inFiles.isEmpty()) {
             throw IllegalArgumentException("No training files")
         }
@@ -100,7 +100,7 @@ class TextClassifier(modelPath: String, val dataPaths: Array<String> = arrayOf()
         val mlParams = TrainingParameters()
         mlParams.put(TrainingParameters.ALGORITHM_PARAM, GISTrainer.MAXENT_VALUE)
         mlParams.put(TrainingParameters.TRAINER_TYPE_PARAM, NaiveBayesTrainer.NAIVE_BAYES_VALUE)
-        mlParams.put(TrainingParameters.CUTOFF_PARAM, 2)
+        mlParams.put(TrainingParameters.CUTOFF_PARAM, cutoff)
         mlParams.put(TrainingParameters.ITERATIONS_PARAM, iterations)
         mlParams.put(TrainingParameters.THREADS_PARAM, threads)
         val factory = DoccatFactory()
@@ -123,7 +123,7 @@ class TextClassifier(modelPath: String, val dataPaths: Array<String> = arrayOf()
             throw IllegalArgumentException("No training files")
         }
         //评估模型
-        val evaluator = DocumentCategorizerEvaluator(DocumentCategorizerME(model), DoccatFineGrainedReportListener())
+        val evaluator = DocumentCategorizerEvaluator(classifier, DoccatFineGrainedReportListener())
         // 准备训练数据
         var dataIn: InputStream = FileInputStream(dataPaths[0])
         for (i in 1 until dataPaths.size) {

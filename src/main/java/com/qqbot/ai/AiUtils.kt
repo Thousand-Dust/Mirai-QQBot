@@ -50,6 +50,26 @@ fun deleteDuplicateLines(readPath: String, outPath: String) {
     fileOutput.close()
 }
 
+fun compareFiles(file1: String, file2: String, outFile: String) {
+    val file1In = FileInputStream(file1)
+    val file2In = FileInputStream(file2)
+    val fileOut = FileOutputStream(outFile)
+    val lines1 = file1In.bufferedReader().lines().collect(Collectors.toList())
+    val lines2 = file2In.bufferedReader().lines().collect(Collectors.toList())
+    for (i in lines1.indices) {
+        val line1 = lines1[i]
+        val line2 = lines2[i]//将每行按空格分割成两部分
+        val label = line2.split(" ", limit = 2)[0]
+        if (label == "聊天" && line1 == line2) {
+            continue
+        }
+        fileOut.write((lines1[i] + "\n").toByteArray())
+    }
+    file1In.close()
+    file2In.close()
+    fileOut.close()
+}
+
 /**
  * 将未分词的数据分词
  */

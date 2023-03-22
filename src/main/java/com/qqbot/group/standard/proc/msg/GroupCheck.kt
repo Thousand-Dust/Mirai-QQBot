@@ -54,7 +54,7 @@ class GroupCheck(groupHandler: GroupEventHandler, database: GroupDatabaseImpl) :
         }
 
         //保证model是最新的
-        if (modelLastModified < modelFile.lastModified()) {
+        if (modelFile.exists() && modelLastModified < modelFile.lastModified()) {
             textClassifier.model = textClassifier.loadModel(modelFile.absolutePath)
             modelLastModified = modelFile.lastModified()
         }
@@ -167,7 +167,7 @@ class GroupCheck(groupHandler: GroupEventHandler, database: GroupDatabaseImpl) :
      * 将分类结果保存到文件
      */
     fun saveData(label: String, text: String, prob: Double) {
-        if (prob > 0.99 || label == "聊天" || text.length < 2) {
+        if (prob > 0.99 || (label == "聊天" && prob > 0.99) || text.length < 2) {
             return
         }
 
