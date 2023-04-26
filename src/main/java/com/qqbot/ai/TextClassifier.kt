@@ -36,7 +36,7 @@ class TextClassifier(modelPath: String, val dataPaths: Array<String> = arrayOf()
     fun categorize(text: Array<out String>): Pair<String, Double> {
         val probs = classifier.categorize(text)
         //获取probs中最大的概率值的索引
-        val maxProb = probs.maxOrNull() ?: probs[0]
+        val maxProb = probs.max() ?: probs[0]
         val maxProbIndex = probs.indexOfFirst {
             it == maxProb
         }

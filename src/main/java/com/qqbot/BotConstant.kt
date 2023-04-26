@@ -26,7 +26,7 @@ object Info {
     const val CHECK_EVENT_COUNT_MAX1 = 3
 
     //和风天气key
-    const val QWEATHER_KEY = "your_key"
+    const val QWEATHER_KEY = "90c730ae25934fb38951fd7b91e2e07e"
 
     //数据储存根目录
     const val DATA_ROOT_PATH = "data"

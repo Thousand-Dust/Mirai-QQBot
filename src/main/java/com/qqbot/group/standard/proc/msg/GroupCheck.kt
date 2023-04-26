@@ -90,11 +90,18 @@ class GroupCheck(groupHandler: GroupEventHandler, database: GroupDatabaseImpl) :
         val msgStr1 = msgStr.replace(" ", "")
         if (msgStr.length > 256 || msgStr1.length < 2) return false
 
+        //检测消息是否为8-10位纯数字，如果是可能是qq群号
+        if (msgStr1.length in 8..10 && msgStr1.all { it.isDigit() }) {
+            message.recall()
+            event.group.sendMessage(At(event.sender) + " 禁止发送群号")
+            return true
+        }
+
         //先将文本进行分词
         val formatText = textClassifier.participle(msgStr.removeAt())
         val result = if (formatText.isNotEmpty()) {
             val category = textClassifier.categorize(formatText.split(" ").toTypedArray())
-            saveData(category.first, formatText, category.second)
+            saveData(if (event.group.id == 742940848L) "广告" else category.first, formatText, category.second)
             category
         } else {
             Pair("其他", 1.0)
@@ -106,7 +113,7 @@ class GroupCheck(groupHandler: GroupEventHandler, database: GroupDatabaseImpl) :
             return false
         }
         when (label) {
-            "脏话" -> {
+            /*"脏话" -> {
                 if (score < 0.96) {
                     return false
                 }
@@ -122,7 +129,7 @@ class GroupCheck(groupHandler: GroupEventHandler, database: GroupDatabaseImpl) :
                 }
                 event.group.sendMessage(At(event.sender) + " 请文明发言！")
                 return true
-            }
+            }*/
             "广告" -> {
                 if (score < 0.98) {
                     return false
@@ -167,7 +174,7 @@ class GroupCheck(groupHandler: GroupEventHandler, database: GroupDatabaseImpl) :
      * 将分类结果保存到文件
      */
     fun saveData(label: String, text: String, prob: Double) {
-        if (prob > 0.99 || (label == "聊天" && prob > 0.99) || text.length < 2) {
+        if (text.length < 2) {
             return
         }
 

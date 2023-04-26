@@ -238,7 +238,7 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabaseImpl)
         if (!checkPermission(database, myGroup, target, sender)) {
             return true
         }
-        val timeMessageStr = timeMessage.toString().lowercase(Locale.getDefault()).replace(" ", "")
+        val timeMessageStr = timeMessage.toString().toLowerCase(Locale.getDefault()).replace(" ", "")
 
         //时间
         var time = timeMessageStr.substring(0, if (timeMessageStr.length > 1) timeMessageStr.length - 1 else 1).toInt()

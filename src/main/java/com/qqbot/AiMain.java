@@ -34,7 +34,7 @@ public class AiMain {
         System.out.println("现在的模型准确率：" + accuracy);
 
         //最小特征频率
-        int cutoff = 2;
+        int cutoff = 3;
 
         //模型准确率无变化次数
         int count = 0;
