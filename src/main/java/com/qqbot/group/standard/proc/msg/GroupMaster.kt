@@ -22,7 +22,11 @@ class GroupMaster(groupHandler: GroupHandler, database: GroupDatabaseImpl) : Gro
 
     private enum class Command {
         开机,
+        开坤,
+        开只因,
         关机,
+        关坤,
+        关只因,
         加积分,
     }
 
@@ -63,7 +67,7 @@ class GroupMaster(groupHandler: GroupHandler, database: GroupDatabaseImpl) : Gro
         val commandMessage = message[1]
         if (message.size == 2) {
             when (commandMessage.contentToString()) {
-                Command.开机.name -> {
+                Command.开机.name, Command.开坤.name, Command.开只因.name -> {
                     if (isOn) {
                         myGroup.sendMessage("已经开机")
                         return false
@@ -71,7 +75,7 @@ class GroupMaster(groupHandler: GroupHandler, database: GroupDatabaseImpl) : Gro
                     isOn = true
                     myGroup.sendMessage("开机成功")
                 }
-                Command.关机.name -> {
+                Command.关机.name, Command.关坤.name, Command.关只因.name -> {
                     if (!isOn) {
                         myGroup.sendMessage("已经关机")
                         return false
