@@ -2,6 +2,7 @@ package com.qqbot.group.standard
 
 import com.qqbot.Info
 import com.qqbot.TimeMillisecond
+import com.qqbot.Utils
 import com.qqbot.database.group.GroupDatabase
 import com.qqbot.database.group.GroupDatabaseImpl
 import com.qqbot.database.group.MemberData
@@ -15,6 +16,8 @@ import kotlinx.coroutines.*
 import net.mamoe.mirai.contact.*
 import net.mamoe.mirai.event.events.*
 import net.mamoe.mirai.message.data.*
+import java.io.ByteArrayOutputStream
+import java.io.PrintStream
 
 /**
  * 单个群的事件普通总处理类
@@ -142,6 +145,13 @@ class GroupHandler(myGroup: Group) : GroupEventHandler(myGroup) {
             } catch (e: Exception) {
                 if (!myGroup.isBotMuted && System.currentTimeMillis() - lastErrorTime > TimeMillisecond.MINUTE && lastErrorType != e.javaClass) {
                     event.group.sendMessage("错误：$e")
+                    //将详细错误输出到文件
+                    val bytesOut = ByteArrayOutputStream()
+                    val printOut = PrintStream(bytesOut)
+                    e.printStackTrace(printOut)
+                    Utils.writeFile("logout/error.log", bytesOut.toByteArray(), true)
+                    printOut.close()
+                    bytesOut.close()
                 }
                 e.printStackTrace()
                 lastErrorTime = System.currentTimeMillis()
