@@ -78,8 +78,8 @@ class GroupScore(groupHandler: GroupEventHandler, database: GroupDatabaseImpl) :
                 "积分排行榜：" + Command.积分排行榜 + "\n" +
                 "禁言：" + Command.kban + "@目标+时间和单位 (s秒,m分钟,h小时)\n" +
                 "解禁：" + Command.kj + "@目标\n" +
-                "抢劫：" + Command.抢劫 + "@目标+积分数量\n" +
-                "抢劫规则：" + Command.抢劫规则 + "\n" +
+//                "抢劫：" + Command.抢劫 + "@目标+积分数量\n" +
+//                "抢劫规则：" + Command.抢劫规则 + "\n" +
                 "其他功能待更新..."
     }
 

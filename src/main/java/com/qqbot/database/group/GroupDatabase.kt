@@ -1,5 +1,6 @@
 package com.qqbot.database.group
 
+import com.mysql.jdbc.exceptions.jdbc4.MySQLNonTransientConnectionException
 import java.sql.Connection
 import java.sql.DriverManager
 import java.sql.Statement
@@ -15,7 +16,8 @@ class GroupDatabase(groupId: Long) : GroupDatabaseImpl {
         private const val PASSWORD = "QQBot-tdzn123"
         private const val DATABASE_NAME = "qqbot_5517"
 
-        private const val url = "jdbc:mysql://localhost:3306/$DATABASE_NAME?useUnicode=true&characterEncoding=utf-8&useSSL=false"
+        private const val url =
+            "jdbc:mysql://localhost:3306/$DATABASE_NAME?useUnicode=true&characterEncoding=utf-8&useSSL=false"
 
         private var connection: Connection
             get() {
@@ -79,7 +81,21 @@ class GroupDatabase(groupId: Long) : GroupDatabaseImpl {
 
     private val TABLE_NAME = "group_$groupId"
 
-    private val statement = connection.createStatement()
+    private var statement: Statement = connection.createStatement()
+        get() {
+            if (field.isClosed) {
+                println("数据库连接已关闭，正在重新连接")
+                try {
+                    //连接数据库
+                    field = connection.createStatement()
+                    println("数据库重新连接成功")
+                } catch (e: Exception) {
+                    println("重新连接数据库失败")
+                    throw e
+                }
+            }
+            return field
+        }
 
     init {
         //数据表不存在则创建
@@ -94,14 +110,30 @@ class GroupDatabase(groupId: Long) : GroupDatabaseImpl {
                 "$COLUMN_PERMISSION INT NOT NULL COMMENT '自定义权限', " +
                 "PRIMARY KEY ($COLUMN_GROUP_ID)" +
                 ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci;"
-        statement.execute(sql)
+        execSQL {
+            execute(sql)
+        }
     }
 
     /**
      * 关闭数据库连接，释放资源
      */
     override fun close() {
+        statement.close()
         connection.close()
+    }
+
+    private fun <T> execSQL(block: Statement.() -> T): T {
+        try {
+            return statement.block()
+        } catch (e: MySQLNonTransientConnectionException) {
+            close()
+            println("数据库连接已关闭，正在重新连接")
+            //连接数据库
+            statement = connection.createStatement()
+            println("数据库重新连接成功")
+            throw e
+        }
     }
 
     /**
@@ -118,7 +150,9 @@ class GroupDatabase(groupId: Long) : GroupDatabaseImpl {
                 "${groupMember.violationCount}, " +
                 "${groupMember.permission}" +
                 ");"
-        statement.execute(sql)
+        execSQL {
+            execute(sql)
+        }
     }
 
     /**
@@ -126,7 +160,9 @@ class GroupDatabase(groupId: Long) : GroupDatabaseImpl {
      */
     override fun delete(id: Long) {
         val sql = "DELETE FROM $TABLE_NAME WHERE $COLUMN_GROUP_ID = ${id};"
-        statement.execute(sql)
+        execSQL {
+            execute(sql)
+        }
     }
 
     /**
@@ -142,7 +178,9 @@ class GroupDatabase(groupId: Long) : GroupDatabaseImpl {
                 "$COLUMN_VIOLATION_COUNT = ${member.violationCount}, " +
                 "$COLUMN_PERMISSION = ${member.permission} " +
                 "WHERE $COLUMN_GROUP_ID = ${member.id}"
-        statement.execute(sql)
+        execSQL {
+            execute(sql)
+        }
     }
 
     /**
@@ -150,7 +188,9 @@ class GroupDatabase(groupId: Long) : GroupDatabaseImpl {
      */
     override fun getMember(id: Long): MemberData? {
         val sql = "SELECT * FROM $TABLE_NAME WHERE $COLUMN_GROUP_ID = $id"
-        val resultSet = statement.executeQuery(sql)
+        val resultSet = execSQL {
+            executeQuery(sql)
+        }
         if (resultSet.next()) {
             return MemberData(
                 resultSet.getLong(COLUMN_GROUP_ID),
@@ -171,7 +211,9 @@ class GroupDatabase(groupId: Long) : GroupDatabaseImpl {
      */
     override fun getTopTen(): List<MemberData> {
         val sql = "SELECT * FROM $TABLE_NAME ORDER BY $COLUMN_SCORE DESC LIMIT 10"
-        val resultSet = statement.executeQuery(sql)
+        val resultSet = execSQL {
+            executeQuery(sql)
+        }
         val list = ArrayList<MemberData>(10)
         while (resultSet.next()) {
             list.add(
@@ -195,7 +237,9 @@ class GroupDatabase(groupId: Long) : GroupDatabaseImpl {
      */
     override fun getPermissions(permission: Int): List<MemberData> {
         val sql = "SELECT * FROM $TABLE_NAME WHERE $COLUMN_PERMISSION=$permission"
-        val resultSet = statement.executeQuery(sql)
+        val resultSet = execSQL {
+            executeQuery(sql)
+        }
         val list = ArrayList<MemberData>()
         while (resultSet.next()) {
             list.add(

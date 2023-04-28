@@ -8,10 +8,10 @@ object Info {
     const val RootManagerId = 2984613883L
 
     //单个群消息事件缓存最大大小
-    const val EVENT_CACHE_MAX_SIZE = 256
+    const val EVENT_CACHE_MAX_SIZE = 512
 
     //单个群bot发送的消息事件缓存最大大小
-    const val BOT_SEND_EVENT_CACHE_MAX_SIZE = 32
+    const val BOT_SEND_EVENT_CACHE_MAX_SIZE = 64
 
     //群刷屏检测引用的历史消息数量
     const val CHECK_EVENT_COUNT = 30

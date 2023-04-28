@@ -208,7 +208,7 @@ class GroupRecreation(groupHandler: GroupHandler, database: GroupDatabaseImpl) :
      * 文字转语音
      */
     private suspend fun say(text: String) = withContext(Dispatchers.IO) {
-        val isIllegal = text.replace("[^\\u4e00-\\u9fa5a-zA-Z0-9]".toRegex(), "").let { it.isEmpty() || it.length > 128 }
+        val isIllegal = text.replace("[^\\u4e00-\\u9fa5a-zA-Z0-9]".toRegex(), "").let { it.isEmpty() || it.length > 256 }
         if (isIllegal) {
             myGroup.sendMessage("请不要输入空白或过长内容")
             return@withContext
