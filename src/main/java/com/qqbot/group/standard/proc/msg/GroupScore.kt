@@ -191,7 +191,7 @@ class GroupScore(groupHandler: GroupEventHandler, database: GroupDatabaseImpl) :
                 memberData.continueSignCount = 1
             }
             //连续签到奖励
-            val fromScore = min(6 + memberData.continueSignCount * 2, 20)
+            val fromScore = min(8 + memberData.continueSignCount * 2, 20)
             val untilScore = min(20 + memberData.continueSignCount * 4, 48)
             //生成随机数为签到的积分
             val randomScore = Random.nextInt(fromScore, untilScore)

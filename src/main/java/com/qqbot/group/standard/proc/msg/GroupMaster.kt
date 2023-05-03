@@ -38,8 +38,8 @@ class GroupMaster(groupHandler: GroupHandler, database: GroupDatabaseImpl) : Gro
         return "主人系统"
     }
 
-    override fun getDesc(): String {
-        return "主人系统(仅机器人主人可用)"
+    override fun getDesc(): String? {
+        return null
     }
 
     override fun getMenu(event: GroupMessageEvent): String? {

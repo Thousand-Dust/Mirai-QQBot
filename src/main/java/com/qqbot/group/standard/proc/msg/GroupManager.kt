@@ -90,7 +90,7 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabaseImpl)
                 踢出并拉黑：${Command.踢黑}/${Command.tb}+@目标
                 禁言：${Command.禁言}/${Command.ban}+@目标+时间和单位(默认10m) (s秒,m分钟,h小时,d天)
                 解禁：${Command.解禁}/${Command.kj}+@目标
-                撤回：${Command.撤回}+@目标+撤回数量(默认10)
+                撤回：${Command.撤回}+[@目标(可选)]+撤回数量(默认10)
                 撤回关键词：${Command.撤回关键词}+关键词
                 封印：${Command.封印}+@目标+封印层数
                 解除封印：${Command.解除封印}+@目标
@@ -146,6 +146,8 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabaseImpl)
                     val comMsgStr = command.toString()
                     if (comMsgStr.startsWith(Command.撤回关键词.name)) {
                         return recallKeyword(message, comMsgStr.substring(Command.撤回关键词.name.length))
+                    } else if (comMsgStr.startsWith(Command.撤回.name)) {
+                        return recallAny(message, comMsgStr.substring(Command.撤回.name.length))
                     }
                 }
             }
@@ -378,6 +380,40 @@ class GroupManager(groupHandler: GroupEventHandler, database: GroupDatabaseImpl)
             return true
         }
         myGroup.sendMessage("已撤回包含关键词 \"$keyword\" 的${count}消息")
+        return true
+    }
+
+    /**
+     * 撤回任何已发送的消息
+     */
+    private suspend fun recallAny(senderMsg: MessageChain, countStr: String): Boolean {
+        if (cacheSize() < 1) return false
+
+        //需要撤回的消息数量
+        var count = countStr.toIntOrNull() ?: return false
+        //实际撤回的消息数量
+        var index = 0
+        for (i in cacheLastIndex() downTo cacheLastIndex() - min(256, cacheLastIndex())) {
+            val message = getCache(i).message
+            if (senderMsg.source != message.source) {
+                try {
+                    message.recall()
+                    count--
+                    index++
+                } catch (e: IllegalStateException) {
+                }
+            }
+            if (count <= 0) {
+                break
+            }
+        }
+        if (index == 0) {
+            myGroup.sendMessage("未找到可撤回的消息（可能是由于消息未在机器人开机期间被记录）")
+            return true
+        }
+
+        myGroup.sendMessage("已撤回${index}条消息")
+
         return true
     }
 

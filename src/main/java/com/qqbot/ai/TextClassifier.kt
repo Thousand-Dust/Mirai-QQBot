@@ -1,5 +1,6 @@
 package com.qqbot.ai
 
+import com.qqbot.Info
 import opennlp.tools.cmdline.doccat.DoccatFineGrainedReportListener
 import opennlp.tools.doccat.*
 import opennlp.tools.ml.maxent.GISTrainer
@@ -16,6 +17,27 @@ import java.io.*
  * @author Thousand-Dust
  */
 class TextClassifier(modelPath: String, val dataPaths: Array<String> = arrayOf()) {
+
+    companion object {
+
+        //model文件路径
+        private val modelFile = File("${Info.AI_DATA_PATH}/model.bin")
+
+        //model文件最后修改时间
+        private var modelLastModified = modelFile.lastModified()
+
+        //文本分类
+        val textClassifier = TextClassifier(modelFile.absolutePath)
+            get() {
+                //保证model是最新的
+                if (modelFile.exists() && modelLastModified < modelFile.lastModified()) {
+                    textClassifier.model = textClassifier.loadModel(modelFile.absolutePath)
+                    modelLastModified = modelFile.lastModified()
+                }
+                return field
+            }
+
+    }
 
     // 使用训练过的分类器预测句子的类别
     var model: DoccatModel = loadModel(modelPath)
@@ -57,6 +79,7 @@ class TextClassifier(modelPath: String, val dataPaths: Array<String> = arrayOf()
      * 文本分词
      */
     fun participle(text: String): String {
+        if (text.isEmpty()) return text
         val result = StringBuilder()
         val reader = StringReader(text)
         val ts = anal.tokenStream("", reader)

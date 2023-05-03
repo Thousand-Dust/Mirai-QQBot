@@ -12,9 +12,11 @@ import com.qqbot.group.msg.GroupMsgProc
 import com.qqbot.group.other.GroupOtherProc
 import com.qqbot.group.standard.proc.msg.*
 import com.qqbot.group.standard.proc.other.OtherStandard
+import com.qqbot.group.standard.proc.other.OtherVest
 import kotlinx.coroutines.*
 import net.mamoe.mirai.contact.*
 import net.mamoe.mirai.event.events.*
+import net.mamoe.mirai.message.MessageReceipt
 import net.mamoe.mirai.message.data.*
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
@@ -44,8 +46,6 @@ class GroupHandler(myGroup: Group) : GroupEventHandler(myGroup) {
     private var lastErrorType: Class<*>? = null
 
     override fun onCreate(): Boolean {
-        //注册其他事件处理器
-        otherProcList.add(OtherStandard(myGroup))
 
         //机器人在群里没有管理员权限，只注册群消息检测系统
         if (myGroup.botPermission < MemberPermission.ADMINISTRATOR) {
@@ -60,6 +60,15 @@ class GroupHandler(myGroup: Group) : GroupEventHandler(myGroup) {
         msgProcList.add(GroupCheck(this, database))
         msgProcList.add(GroupScore(this, database))
         msgProcList.add(GroupRecreation(this, database))
+
+        if (myGroup.id == 142155075L) {
+            //注册 天际 群专属处理器
+            otherProcList.add(OtherVest(myGroup))
+            msgProcList.add(GroupVest(this, database))
+        } else {
+            //注册其他事件标准处理器
+            otherProcList.add(OtherStandard(myGroup))
+        }
 
         return true
     }
@@ -114,7 +123,12 @@ class GroupHandler(myGroup: Group) : GroupEventHandler(myGroup) {
                         }
                     }
                     if (menuStr != null) {
-                        event.group.sendMessage(menuStr)
+                        val sendMsg = event.group.sendMessage(menuStr)
+                        coroutineScope.launch {
+                            // 1 minute later recall
+                            delay(TimeMillisecond.MINUTE)
+                            sendMsg.recall()
+                        }
                         return@launch
                     }
                 }

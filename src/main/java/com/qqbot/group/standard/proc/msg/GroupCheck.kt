@@ -27,17 +27,11 @@ import java.util.stream.Collectors
  */
 class GroupCheck(groupHandler: GroupEventHandler, database: GroupDatabaseImpl) : GroupMsgProc(groupHandler, database) {
 
-    //model文件路径
-    private val modelFile = File("${Info.AI_DATA_PATH}/model.bin")
-    //文本分类
-    private val textClassifier = TextClassifier(modelFile.absolutePath)
-
-    //model文件最后修改时间
-    private var modelLastModified = modelFile.lastModified()
-
     init {
 //        println("文本分类模型准确率为：${textClassifier.getAccuracy()}")
     }
+
+    private val zhWords = "操你妈，草拟吗，草泥马，妈死，玛死，马死，你母，傻逼，妈逼，日你".split("，")
 
     override suspend fun process(event: GroupMessageEvent): Boolean {
         if (myGroup.isBotMuted) {
@@ -51,12 +45,6 @@ class GroupCheck(groupHandler: GroupEventHandler, database: GroupDatabaseImpl) :
             if (illegalMessage(event)) {
                 return true
             }
-        }
-
-        //保证model是最新的
-        if (modelFile.exists() && modelLastModified < modelFile.lastModified()) {
-            textClassifier.model = textClassifier.loadModel(modelFile.absolutePath)
-            modelLastModified = modelFile.lastModified()
         }
 
         if (checkDirtyWord(event)) {
@@ -86,7 +74,7 @@ class GroupCheck(groupHandler: GroupEventHandler, database: GroupDatabaseImpl) :
         val message = event.message
         if (message.filterIsInstance<PlainText>().isEmpty()) return false
 
-        val msgStr = message.contentToString()
+        val msgStr = message.contentToString().removeAt()
         val msgStr1 = msgStr.replace(" ", "")
         if (msgStr.length > 256 || msgStr1.length < 2) return false
 
@@ -98,10 +86,11 @@ class GroupCheck(groupHandler: GroupEventHandler, database: GroupDatabaseImpl) :
         }
 
         //先将文本进行分词
-        val formatText = textClassifier.participle(msgStr.removeAt())
+        val formatText = TextClassifier.textClassifier.participle(msgStr)
         val result = if (formatText.isNotEmpty()) {
-            val category = textClassifier.categorize(formatText.split(" ").toTypedArray())
-            saveData(if (event.group.id == 742940848L) "广告" else category.first, formatText, category.second)
+            val category = TextClassifier.textClassifier.categorize(formatText.split(" ").toTypedArray())
+            val isWord = zhWords.any { msgStr.contains(it) }
+            saveData(if (isWord) "脏话" else category.first, formatText, category.second)
             category
         } else {
             Pair("其他", 1.0)
@@ -112,6 +101,8 @@ class GroupCheck(groupHandler: GroupEventHandler, database: GroupDatabaseImpl) :
         if (!myGroup.botPermission.isOperator() || myGroup.isBotMuted) {
             return false
         }
+
+        if (event.group.id == 142155075L) return false
         when (label) {
             /*"脏话" -> {
                 if (score < 0.96) {
