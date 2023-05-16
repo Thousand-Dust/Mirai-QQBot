@@ -1,4 +1,4 @@
-## 基于Mirai开发的的QQ机器人
+## 基于[Mirai](https://github.com/mamoe/mirai)开发的的QQ机器人
 ### 使用了：<br/>MySQL数据库储存数据<br/>OpenNLP自然语言处理框架进行文本分类<br/>Lucene进行文本分词
 
 <details>
